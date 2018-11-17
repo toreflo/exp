@@ -5,9 +5,12 @@ import {
   Button,
   StyleSheet
 } from "react-native";
-
-import { createStackNavigator, createDrawerNavigator, createBottomTabNavigator } from 'react-navigation';
-import { DrawerActions } from 'react-navigation-drawer';
+import {
+  createSwitchNavigator,
+  createStackNavigator,
+  createDrawerNavigator,
+  createBottomTabNavigator
+} from 'react-navigation';
 
 import WelcomeScreen from './WelcomeScreen';
 import LoginScreen from './LoginScreen';
@@ -25,7 +28,7 @@ const OpenDrawerNavigationOptions = ({ navigation }) => ({
   headerLeft: (
     <Button
       title="Menu"
-      onPress={ () => navigation.dispatch(DrawerActions.toggleDrawer()) }
+      onPress={ () => navigation.toggleDrawer() }
     />
   ),
 });
@@ -69,22 +72,18 @@ const AppDrawerNavigator = createDrawerNavigator({
   LogoutScreen: { screen: LogoutScreen },
 });
 
-const Navigator = createStackNavigator({
+const WelcomeStackNavigator = createStackNavigator({
   WelcomeScreen: { screen: WelcomeScreen },
   LoginScreen: { screen: LoginScreen },
   SignUpScreen: { screen: SignUpScreen },
-  AppDrawerNavigator: {
-    screen: AppDrawerNavigator,
-    navigationOptions: {
-      header: null,
-      gesturesEnabled: false,
-    },
-  },
-}, {
-  // headerMode: 'none',
 });
 
-export default Navigator;
+const RootNavigator = createSwitchNavigator({
+  WelcomeStackNavigator: { screen: WelcomeStackNavigator },
+  AppDrawerNavigator: { screen: AppDrawerNavigator },
+});
+
+export default RootNavigator;
 
 const styles = StyleSheet.create({
   container: {
