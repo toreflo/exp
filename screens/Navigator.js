@@ -48,7 +48,20 @@ const HomeStackNavigator = createStackNavigator({
   UserDetailsScreen: { screen: UserDetailsScreen },
   GroupDetailsScreen: { screen: GroupDetailsScreen },
 }, {
-  // navigationOptions: OpenDrawerNavigationOptions,
+  navigationOptions: ({ navigation }) => {
+    let opts = {};
+    if (navigation.state.index === 0) {
+      opts = { 
+        headerLeft: (
+          <Button
+            title="Menu"
+            onPress={ () => navigation.toggleDrawer() }
+          />
+        ),
+      }
+    }
+    return opts;
+  },
 });
 
 const AppDrawerNavigator = createDrawerNavigator({
