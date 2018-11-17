@@ -2,25 +2,19 @@ import React, { Component } from "react";
 import { 
   View,
   Text,
-  Button,
   StyleSheet
 } from "react-native";
 
-class BoardScreen extends Component {
+class WriteMessageScreen extends Component {
   render() {
     return (
       <View style={styles.container}>
-        <Text>BoardScreen</Text>
-        <Button
-          title="+"
-          onPress={ () => this.props.navigation.navigate('WriteMessageScreen') }
-        />
+        <Text>WriteMessageScreen</Text>
       </View>
     );
   }
 }
-export default BoardScreen;
-
+export default WriteMessageScreen;
 
 const styles = StyleSheet.create({
   container: {

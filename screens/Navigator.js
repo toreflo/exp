@@ -17,6 +17,7 @@ import LoginScreen from './LoginScreen';
 import SignUpScreen from './SignUpScreen';
 import LogoutScreen from './LogoutScreen';
 import BoardScreen from './BoardScreen';
+import WriteMessageScreen from './WriteMessageScreen';
 import MessageGroupsScreen from './MessageGroupsScreen';
 import MessagesScreen from './MessagesScreen';
 import UsersScreen from './UsersScreen';
@@ -33,42 +34,25 @@ const OpenDrawerNavigationOptions = ({ navigation }) => ({
   ),
 });
 
-const MessagesStackNavigator = createStackNavigator({
+const HomeTabNavigator = createBottomTabNavigator({
+  BoardScreen: { screen: BoardScreen },
   MessageGroupsScreen: { screen: MessageGroupsScreen },
-  MessagesScreen: { screen: MessagesScreen },
-}, {
-  navigationOptions: OpenDrawerNavigationOptions,
-});
-
-const UsersStackNavigator = createStackNavigator({
   UsersScreen: { screen: UsersScreen },
-  UserDetailsScreen: { screen: UserDetailsScreen },
-}, {
-  navigationOptions: OpenDrawerNavigationOptions,
+  GroupsScreen: { screen: GroupsScreen },
 });
 
-const GroupsStackNavigator = createStackNavigator({
-  GroupsScreen: { screen: GroupsScreen },
+const HomeStackNavigator = createStackNavigator({
+  HomeTabNavigator: { screen: HomeTabNavigator },
+  WriteMessageScreen: { screen: WriteMessageScreen },
+  MessagesScreen: { screen: MessagesScreen },
+  UserDetailsScreen: { screen: UserDetailsScreen },
   GroupDetailsScreen: { screen: GroupDetailsScreen },
 }, {
-  navigationOptions: OpenDrawerNavigationOptions,
-});
-
-const BoardStackNavigator = createStackNavigator({
-  BoardScreen: { screen: BoardScreen },
-}, {
-  navigationOptions: OpenDrawerNavigationOptions,
-});
-
-const HomeTabNavigator = createBottomTabNavigator({
-  BoardStackNavigator: { screen: BoardStackNavigator },
-  MessagesStackNavigator: { screen: MessagesStackNavigator },
-  UsersStackNavigator: { screen: UsersStackNavigator },
-  GroupsStackNavigator: { screen: GroupsStackNavigator },
+  // navigationOptions: OpenDrawerNavigationOptions,
 });
 
 const AppDrawerNavigator = createDrawerNavigator({
-  HomeTabNavigator: { screen: HomeTabNavigator },
+  HomeStackNavigator: { screen: HomeStackNavigator },
   LogoutScreen: { screen: LogoutScreen },
 });
 
