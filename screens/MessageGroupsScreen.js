@@ -2,6 +2,7 @@ import React, { Component } from "react";
 import { 
   View,
   Text,
+  Button,
   StyleSheet
 } from "react-native";
 
@@ -10,6 +11,10 @@ class MessageGroupsScreen extends Component {
     return (
       <View style={styles.container}>
         <Text>MessageGroupsScreen</Text>
+        <Button
+          title="+"
+          onPress={ () => this.props.navigation.navigate('MessagesScreen') }
+        />
       </View>
     );
   }
