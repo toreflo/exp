@@ -48,6 +48,7 @@ const HomeStackNavigator = createStackNavigator({
   UserDetailsScreen: { screen: UserDetailsScreen },
   GroupDetailsScreen: { screen: GroupDetailsScreen },
 }, {
+  mode: 'modal',
   navigationOptions: ({ navigation }) => {
     let opts = {};
     if (navigation.state.routeName === 'HomeTabNavigator') {
