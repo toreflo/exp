@@ -7,9 +7,11 @@ import {
 
 class UserDetailsScreen extends Component {
   render() {
+    const name = this.props.navigation.getParam('user');
+
     return (
       <View style={styles.container}>
-        <Text>UserDetailsScreen</Text>
+        <Text>{name}</Text>
       </View>
     );
   }

@@ -25,15 +25,6 @@ import UserDetailsScreen from './UserDetailsScreen';
 import GroupsScreen from './GroupsScreen';
 import GroupDetailsScreen from './GroupDetailsScreen';
 
-const OpenDrawerNavigationOptions = ({ navigation }) => ({
-  headerLeft: (
-    <Button
-      title="Menu"
-      onPress={ () => navigation.toggleDrawer() }
-    />
-  ),
-});
-
 const HomeTabNavigator = createBottomTabNavigator({
   BoardScreen: { screen: BoardScreen },
   MessageGroupsScreen: { screen: MessageGroupsScreen },
