@@ -50,8 +50,9 @@ const HomeStackNavigator = createStackNavigator({
 }, {
   navigationOptions: ({ navigation }) => {
     let opts = {};
-    if (navigation.state.index === 0) {
+    if (navigation.state.routeName === 'HomeTabNavigator') {
       opts = { 
+        ...opts,
         headerLeft: (
           <Button
             title="Menu"
