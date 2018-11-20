@@ -1,12 +1,17 @@
 import React, { Component } from "react";
 import { 
-  View,
-  Text,
-  Button,
-  TextInput,
   Alert,
   StyleSheet
 } from "react-native";
+import {
+  Container,
+  Form,
+  Item,
+  Label,
+  Input,
+  Text,
+  Button,
+} from "native-base";
 import firebase from 'firebase';
 
 class LoginScreen extends Component {
@@ -34,26 +39,36 @@ class LoginScreen extends Component {
 
   render() {
     return (
-      <View style={styles.container}>
-        <Text>LoginScreen</Text>
-        <TextInput
-          placeholder="username"
-          onChangeText={(email) => this.setState({ email })}
-          value={ this.state.email }
-          autoCapitalize="none"
-        />
-        <TextInput
-          placeholder="password"
-          onChangeText={(password) => this.setState({ password })}
-          value={ this.state.password }
-          autoCapitalize="none"
-          secureTextEntry
-        />
-        <Button
-          title="login"
-          onPress={this.login}
-        />
-      </View>
+      <Container style={styles.container} >
+        <Form>
+          <Item floatingLabel>
+            <Label>Email</Label>
+            <Input
+              autoCorrect={false}
+              autoCapitalize="none"
+              onChangeText={(email) => this.setState({ email })}
+            />
+          </Item>
+          <Item floatingLabel>
+            <Label>Password</Label>
+            <Input
+              secureTextEntry
+              autoCorrect={false}
+              autoCapitalize="none"
+              onChangeText={(password) => this.setState({ password })}
+            />
+          </Item>
+          <Button
+            style={{ marginTop: 10 }}
+            full
+            rounded
+            success
+            onPress={this.login}
+          >
+            <Text>Accedi</Text>
+          </Button>
+        </Form>
+      </Container>
     );
   }
 }
@@ -62,7 +77,7 @@ export default LoginScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
+    // alignItems: 'center',
     justifyContent: 'center'
   }
 });

@@ -1,12 +1,17 @@
 import React, { Component } from "react";
 import { 
-  View,
-  Text,
-  TextInput,
-  Button,
   Alert,
   StyleSheet
 } from "react-native";
+import {
+  Container,
+  Form,
+  Item,
+  Label,
+  Input,
+  Text,
+  Button,
+} from "native-base";
 import firebase from 'firebase';
 
 class SignUpScreen extends Component {
@@ -34,26 +39,36 @@ class SignUpScreen extends Component {
 
   render() {
     return (
-      <View style={styles.container}>
-        <Text>SignUpScreen</Text>
-        <TextInput
-          placeholder="username"
-          onChangeText={(email) => this.setState({ email })}
-          value={ this.state.email }
-          autoCapitalize="none"
-        />
-        <TextInput
-          placeholder="password"
-          onChangeText={(password) => this.setState({ password })}
-          value={ this.state.password }
-          autoCapitalize="none"
-          secureTextEntry
-        />
-        <Button
-          title="Crea account"
-          onPress={this.register}
-        />
-      </View>
+      <Container style={styles.container} >
+        <Form>
+          <Item floatingLabel>
+            <Label>Email</Label>
+            <Input
+              autoCorrect={false}
+              autoCapitalize="none"
+              onChangeText={(email) => this.setState({ email })}
+            />
+          </Item>
+          <Item floatingLabel>
+            <Label>Password</Label>
+            <Input
+              secureTextEntry
+              autoCorrect={false}
+              autoCapitalize="none"
+              onChangeText={(password) => this.setState({ password })}
+            />
+          </Item>
+          <Button
+            style={{ marginTop: 10 }}
+            full
+            rounded
+            primary
+            onPress={this.register}
+          >
+            <Text>Registrati</Text>
+          </Button>
+        </Form>
+      </Container>
     );
   }
 }
@@ -63,7 +78,8 @@ export default SignUpScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
+    backgroundColor: '#fff',
+    // alignItems: 'center',
     justifyContent: 'center'
   }
 });
