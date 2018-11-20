@@ -73,7 +73,10 @@ const RootNavigator = createSwitchNavigator({
   AppDrawerNavigator: { screen: AppDrawerNavigator },
 });
 
-export default RootNavigator;
+export {
+  AppDrawerNavigator,
+  WelcomeStackNavigator,
+};
 
 const styles = StyleSheet.create({
   container: {
