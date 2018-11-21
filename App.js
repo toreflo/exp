@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { Spinner } from 'native-base';
 import firebase from 'firebase';
 
 import { WelcomeStackNavigator, AppDrawerNavigator} from './screens/Navigator.js';
@@ -14,7 +15,8 @@ export default class App extends React.Component {
   }
 
   componentWillMount() {
-    firebase.initializeApp(config.firebaseConfig);
+    const firebaseApp = firebase.initializeApp(config.firebaseConfig);
+    // firebaseApp.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
   }
 
   /**
@@ -23,6 +25,7 @@ export default class App extends React.Component {
    */
   componentDidMount() {
     this.authRemoveSubscription = firebase.auth().onAuthStateChanged((user) => {
+
       this.setState({
         loading: false,
         user,
@@ -39,7 +42,11 @@ export default class App extends React.Component {
 
 
   render() {
-    if (this.state.loading) return (<View style={styles.container}><Text>Loading...</Text></View>);
+    if (this.state.loading) return (
+      <View style={styles.container}>
+        <Spinner />
+      </View>
+    );
 
     // The user is an Object, so they're logged in
     if (this.state.user) return (<AppDrawerNavigator />);
