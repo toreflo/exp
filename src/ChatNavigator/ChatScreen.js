@@ -2,24 +2,19 @@ import React, { Component } from "react";
 import { 
   View,
   Text,
-  Button,
   StyleSheet
 } from "react-native";
 
-class MessageGroupsScreen extends Component {
+class ChatScreen extends Component {
   render() {
     return (
       <View style={styles.container}>
-        <Text>MessageGroupsScreen</Text>
-        <Button
-          title="+"
-          onPress={ () => this.props.navigation.navigate('MessagesScreen') }
-        />
+        <Text>ChatScreen</Text>
       </View>
     );
   }
 }
-export default MessageGroupsScreen;
+export default ChatScreen;
 
 const styles = StyleSheet.create({
   container: {

@@ -17,10 +17,10 @@ class LogoutScreen extends Component {
           title="logout"
           onPress={() => {
             firebase.auth().signOut()
-             .catch((error) => {
-               const { code, message } = error;
-               Alert.alert(code, message);
-             });
+              .catch((error) => {
+                const { code, message } = error;
+                Alert.alert(code, message);
+              });
           }}
         />
       </View>

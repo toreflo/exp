@@ -3,7 +3,8 @@ import { StyleSheet, Text, View } from 'react-native';
 import { Spinner } from 'native-base';
 import firebase from 'firebase';
 
-import { HomeTabNavigator } from './src/Navigators';
+import HomeNavigator from './src/HomeNavigator';
+import WelcomeNavigator from './src/WelcomeNavigator';
 import config from './config';
 
 export default class App extends React.Component {
@@ -50,10 +51,10 @@ export default class App extends React.Component {
 
     // The user is an Object, so they're logged in
     // if (this.state.user) return (<AppDrawerNavigator />);
-    if (this.state.user) return (<HomeTabNavigator />);
+    if (this.state.user) return (<HomeNavigator />);
 
     // The user is null, so they're logged out
-    // return (<WelcomeStackNavigator />);
+    return (<WelcomeNavigator />);
   }
 }
 
