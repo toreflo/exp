@@ -13,7 +13,6 @@ class BoardScreen extends Component {
   render() {
     return (
       <Container>
-        <Header />
         <Content >
           <Text >BoardScreen</Text>
           <Button
