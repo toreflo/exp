@@ -6,6 +6,9 @@ import {
 } from "react-native";
 import {
   Container,
+  Header,
+  Left,
+  Right,
   Form,
   Content,
   Button,
@@ -17,10 +20,43 @@ import {
   Text,
   Input,
   Label,
+  Body,
+  Segment,
 } from 'native-base';
 import firebase from 'firebase';
 
 class UsersScreen extends Component {
+  static navigationOptions = ({ navigation }) => {
+    const activeSegment = navigation.getParam('activeSegment', 'users');
+    return {
+      header: (
+        <Header hasSegment>
+          <Left />
+          <Body>
+            {/* <Title>pippo</Title> */}
+            <Segment>
+              <Button
+                first
+                active={ activeSegment === 'users' }
+                onPress={ () => navigation.setParams({ activeSegment: 'users' }) }
+              >
+                <Text>Utenti</Text>
+              </Button>
+              <Button
+                last
+                active={ activeSegment === 'groups' }
+                onPress={ () => navigation.setParams({ activeSegment: 'groups' }) }
+              >
+                <Text>Gruppi</Text>
+              </Button>
+            </Segment>
+          </Body>
+          <Right />
+        </Header>
+      ),
+    }
+  };
+
   constructor(props) {
     super(props);
     this.ds = new ListView.DataSource({ rowHasChanged: (r1, r2) => r1 !== r2 });
