@@ -19,8 +19,6 @@ class StackHeader extends Component {
         </Left>
       );
     }
-    console.log(initialRouteKey)
-
     return (
       <Header>
         {left}
