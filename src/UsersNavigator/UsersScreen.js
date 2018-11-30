@@ -96,9 +96,10 @@ class UsersScreen extends Component {
   }
 
   addUser() {
-    const key = this.db.ref('/users/').push().key;
-    this.db.ref('/users/').child(key).set({ name: this.state.newUser });
-    this.setState({ newUser: ''});
+    this.props.navigation.navigate('AddUserScreen');
+    // const key = this.db.ref('/users/').push().key;
+    // this.db.ref('/users/').child(key).set({ name: this.state.newUser });
+    // this.setState({ newUser: ''});
   }
 
   async deleteRow(data, secId, rowId, rowMap) {
