@@ -14,6 +14,8 @@ import {
 } from "native-base";
 import firebase from 'firebase';
 
+import config from '../../config';
+
 class AddUserScreen extends Component {
   constructor() {
     super();
@@ -29,7 +31,7 @@ class AddUserScreen extends Component {
   }
 
   addUser() {
-    const URL = 'https://us-central1-exp-app-6cbc4.cloudfunctions.net/createUser';
+    const URL = `${config.baseURL}/createUser`;
     const { email, password, name, surname } = this.state;
 
     firebase.auth().currentUser.getIdToken(true)
