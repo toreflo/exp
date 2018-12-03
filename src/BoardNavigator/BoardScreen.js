@@ -1,27 +1,26 @@
 import React, { Component } from "react";
-import { StyleSheet } from "react-native";
+import { View, StyleSheet } from "react-native";
 import { 
   Container,
-  Header,
-  Content,
-  Button,
-  Text,
   Icon,
+  Fab,
 } from "native-base";
 
 class BoardScreen extends Component {
   render() {
     return (
       <Container>
-        <Content >
-          <Text >BoardScreen</Text>
-          <Button
-            vertical
-            onPress={ () => this.props.navigation.navigate('WriteMessageScreen') }
-          >
-            <Icon type="FontAwesome" name="home" />
-          </Button>
-        </Content>
+        <View style={{ flex: 1 }}>
+          <Fab
+            active={true}
+            direction="up"
+            containerStyle={{ }}
+            style={{ backgroundColor: '#5067FF' }}
+            position="bottomRight"
+            onPress={() => this.props.navigation.navigate('WriteMessageScreen')}>
+            <Icon type="FontAwesome" name="pencil" />
+          </Fab>
+        </View>
       </Container>
     );
   }

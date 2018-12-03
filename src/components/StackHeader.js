@@ -7,6 +7,7 @@ class StackHeader extends Component {
   render() {
     const { navigation } = this.props;
     let left = <Left />;
+    let right = <Right />;
     let icon = this.props.modal ? 
       <Icon type="Ionicons" name="ios-close" /> : <Icon type="Ionicons" name="ios-arrow-back" />;
     if (navigation.state.key !== initialRouteKey) {
@@ -20,6 +21,20 @@ class StackHeader extends Component {
           </Button>
         </Left>
       );
+      if (this.props.sendButton) {
+        const send = navigation.getParam('send', () => {});
+
+        right = (
+          <Right>
+            <Button
+              transparent
+              onPress={() => send()}
+            >
+              <Icon type="Ionicons" name="ios-send" />
+            </Button>
+          </Right>
+        );
+      }
     }
     return (
       <Header>
@@ -27,7 +42,7 @@ class StackHeader extends Component {
         <Body>
           <Title>{navigation.state.routeName}</Title>
         </Body>
-        <Right/>
+        {right}
       </Header>
     );
   }

@@ -11,9 +11,10 @@ const BoardStackNavigator = createStackNavigator({
   WriteMessageScreen: { screen: WriteMessageScreen },
 }, {
   initialRouteName: 'BoardScreen',
+  mode: 'modal',
   initialRouteKey,
   navigationOptions: ({ navigation }) => ({
-    header: <StackHeader navigation={navigation} />
+    header: <StackHeader navigation={navigation} modal/>
   }),
 });
 

@@ -36,7 +36,6 @@ class UsersScreen extends Component {
         <Header hasSegment>
           <Left />
           <Body>
-            {/* <Title>pippo</Title> */}
             <Segment>
               <Button
                 first
@@ -162,17 +161,17 @@ class UsersScreen extends Component {
 
     return (
       <Container>
-          <View style={{ flex: 1 }}>
-            {content}
-            <Fab
-              active={true}
-              direction="up"
-              containerStyle={{ }}
-              style={{ backgroundColor: '#5067FF' }}
-              position="bottomRight"
-              onPress={() => this.props.navigation.navigate('AddUserScreen')}>
-              <Icon type="FontAwesome" name="user-plus" />
-            </Fab>
+        <View style={{ flex: 1 }}>
+          {content}
+          <Fab
+            active={true}
+            direction="up"
+            containerStyle={{ }}
+            style={{ backgroundColor: '#5067FF' }}
+            position="bottomRight"
+            onPress={() => this.props.navigation.navigate('AddUserScreen')}>
+            <Icon type="FontAwesome" name="user-plus" />
+          </Fab>
         </View>
       </Container>
     );
