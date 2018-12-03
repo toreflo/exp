@@ -13,9 +13,10 @@ const UsersStackNavigator = createStackNavigator({
   UserDetailsScreen: { screen: UserDetailsScreen },
 }, {
   initialRouteName: 'UsersScreen',
+  mode: 'modal',
   initialRouteKey,
   navigationOptions: ({ navigation }) => ({
-    header: <StackHeader navigation={navigation} />
+    header: <StackHeader navigation={navigation} modal />
   }),
 });
 

@@ -22,6 +22,7 @@ import {
   Label,
   Body,
   Segment,
+  Fab,
 } from 'native-base';
 import firebase from 'firebase';
 
@@ -136,10 +137,10 @@ class UsersScreen extends Component {
         renderRow={(data) => (
           <ListItem onPress={() => this.props.navigation.navigate(
             'UserDetailsScreen',
-            { user: data.val().name },
+            { user: data.val() },
             )}
           >
-            <Text> {data.val().name} </Text>
+            <Text> {`${data.val().name} ${data.val().surname}`} </Text>
           </ListItem>
         )}
         renderLeftHiddenRow={(data, secId, rowId, rowMap) => (
@@ -161,29 +162,18 @@ class UsersScreen extends Component {
 
     return (
       <Container>
-        <Content>
-          <Form style={styles.addUser}>
-            <Item floatingLabel style={{ flex: 5 }}>
-              <Label>Nuovo utente</Label>
-              <Input
-                autoCorrect={false}
-                autoCapitalize="none"
-                onChangeText={(newUser) => this.setState({ newUser })}
-                value={this.state.newUser}
-              />
-            </Item>
-            <Item style={{ flex: 1, marginRight: 20 }}>
-              <Button
-                rounded
-                primary
-                onPress={this.addUser}
-              >
-                <Text>+</Text>
-              </Button>
-            </Item>
-          </Form>
-          {content}
-        </Content>
+          <View style={{ flex: 1 }}>
+            {content}
+            <Fab
+              active={true}
+              direction="up"
+              containerStyle={{ }}
+              style={{ backgroundColor: '#5067FF' }}
+              position="bottomRight"
+              onPress={() => this.props.navigation.navigate('AddUserScreen')}>
+              <Icon type="FontAwesome" name="user-plus" />
+            </Fab>
+        </View>
       </Container>
     );
   }

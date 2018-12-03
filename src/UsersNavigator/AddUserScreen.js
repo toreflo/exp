@@ -51,7 +51,10 @@ class AddUserScreen extends Component {
           }),
         }))
       .then((response) => response.json())
-      .then((responseJson) => alert(responseJson.message))
+      .then((responseJson) => {
+        if (responseJson.error) alert(responseJson.message);
+        else this.props.navigation.goBack();
+      })
       .catch((error) => alert(`${error.name}: ${error.message}`));
   }
 

@@ -7,6 +7,8 @@ class StackHeader extends Component {
   render() {
     const { navigation } = this.props;
     let left = <Left />;
+    let icon = this.props.modal ? 
+      <Icon type="Ionicons" name="ios-close" /> : <Icon type="Ionicons" name="ios-arrow-back" />;
     if (navigation.state.key !== initialRouteKey) {
       left = (
         <Left>
@@ -14,7 +16,7 @@ class StackHeader extends Component {
             transparent
             onPress={() => navigation.goBack()}
           >
-            <Icon type="Ionicons" name="ios-arrow-back" />
+            {icon}
           </Button>
         </Left>
       );

@@ -7,11 +7,13 @@ import {
 
 class UserDetailsScreen extends Component {
   render() {
-    const name = this.props.navigation.getParam('user');
+    const { name, surname, email } = this.props.navigation.getParam('user');
 
     return (
       <View style={styles.container}>
         <Text>{name}</Text>
+        <Text>{surname}</Text>
+        <Text>{email}</Text>
       </View>
     );
   }
