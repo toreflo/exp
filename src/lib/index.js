@@ -7,7 +7,9 @@ exports.checkCollection = (path) => new Promise((resolve, reject) => {
         return resolve();
       }
       console.log('Creating', path)
-      return firebase.database().ref(path).set({ exists: true });
+      return firebase.database().ref(path).push({
+        exists: true,
+      });
     })
     .then(() => resolve())
     .catch(err => reject(err));

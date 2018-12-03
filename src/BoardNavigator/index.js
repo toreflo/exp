@@ -3,11 +3,13 @@ import { createStackNavigator } from 'react-navigation';
 
 import BoardScreen from './BoardScreen';
 import WriteMessageScreen from './WriteMessageScreen';
+import MessageDetailsScreen from './MessageDetailsScreen';
 import StackHeader from '../components/StackHeader';
 import { initialRouteKey } from '../gbl';
 
 const BoardStackNavigator = createStackNavigator({
   BoardScreen: { screen: BoardScreen },
+  MessageDetailsScreen: { screen: MessageDetailsScreen },
   WriteMessageScreen: { screen: WriteMessageScreen },
 }, {
   initialRouteName: 'BoardScreen',
