@@ -31,7 +31,7 @@ class AddUserScreen extends Component {
   }
 
   addUser() {
-    const URL = `${config.baseURL}/createUser`;
+    const URL = `${config.baseURL}/httpRequests`;
     const { email, password, name, surname } = this.state;
 
     firebase.auth().currentUser.getIdToken(true)
@@ -44,6 +44,7 @@ class AddUserScreen extends Component {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
+            type: 'createUser',
             idToken,
             name,
             surname,

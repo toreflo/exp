@@ -25,6 +25,8 @@ import {
 } from 'native-base';
 import firebase from 'firebase';
 
+import config from '../../config';
+
 class UsersScreen extends Component {
   static navigationOptions = ({ navigation }) => {
     const activeSegment = navigation.getParam('activeSegment', 'users');
@@ -97,14 +99,30 @@ class UsersScreen extends Component {
 
   addUser() {
     this.props.navigation.navigate('AddUserScreen');
-    // const key = this.db.ref('/users/').push().key;
-    // this.db.ref('/users/').child(key).set({ name: this.state.newUser });
-    // this.setState({ newUser: ''});
   }
 
   async deleteRow(data, secId, rowId, rowMap) {
     rowMap[`${secId}${rowId}`].props.closeRow();
-    await this.db.ref(`/users/${data.key}`).set(null);
+    const URL = `${config.baseURL}/httpRequests`;
+
+    firebase.auth().currentUser.getIdToken(true)
+      .then((idToken) => fetch(
+        URL, 
+        {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            type: 'deleteUser',
+            idToken,
+            uid: data.key,
+          }),
+        }))
+      .then((response) => response.json())
+      .then((responseJson) => alert(responseJson.message))
+      .catch((error) => alert(`${error.name}: ${error.message}`));
   }
 
   render() {

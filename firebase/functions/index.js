@@ -5,36 +5,8 @@ const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 admin.initializeApp();
 
-exports.handleNewUser = functions.auth.user().onCreate((user) => {
-  const db = admin.database();
-
-  console.log('New user:', JSON.stringify(user));
-});
-
-exports.createUser = functions.https.onRequest((req, res) => {
+const createUser = (req, res) => {
   const { idToken, name, surname, email, password } = req.body;
-/*  let found = false;
-  
-    admin.database().ref('/users/').once('value')
-    .then((snapshot) => {
-      snapshot.forEach((user) => {
-        if (user.val().email === email) {
-          found = true;
-          return;
-        }
-      });
-      if (found) {
-        throw new Error(`L'utente ${email} esiste già!`);
-      }
-      return admin.auth().createUser({
-        email,
-        emailVerified: false,
-        password,
-        name,
-        surname,
-        disabled: false
-      })      
-    }) */
 
   admin.auth().verifyIdToken(idToken)
     .then((decodedToken) => admin.database().ref('/users/' + decodedToken.uid).once('value'))
@@ -63,4 +35,30 @@ exports.createUser = functions.https.onRequest((req, res) => {
       error: true,
       message: error.message,
     }));
+}
+
+const deleteUser = (req, res) => {
+  const { idToken, uid } = req.body;
+
+  admin.auth().verifyIdToken(idToken)
+    .then((decodedToken) => admin.database().ref('/users/' + decodedToken.uid).once('value'))
+    .then((snapshot) => {
+      if (!snapshot || !snapshot.val() || !snapshot.val().admin) {
+        throw new Error(`Non hai i privilegi per eliminare utenti!`);
+      }
+      return admin.auth().deleteUser(uid);
+    })
+    .then((userRecord) => admin.database().ref(`/users/${uid}`).set(null))
+    .then(() => res.send({
+      message: `Eliminato utente ${uid}!`
+    }))
+    .catch((error) => res.status(500).send({
+      error: true,
+      message: error.message,
+    }));
+}
+
+exports.httpRequests = functions.https.onRequest((req, res) => {
+  if (req.body.type === 'createUser') return createUser(req, res);
+  if (req.body.type === 'deleteUser') return deleteUser(req, res);
 });
