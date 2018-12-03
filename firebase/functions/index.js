@@ -12,10 +12,10 @@ exports.handleNewUser = functions.auth.user().onCreate((user) => {
 });
 
 exports.createUser = functions.https.onRequest((req, res) => {
-  const { name, surname, email, password } = req.body;
-  let found = false;
+  const { idToken, name, surname, email, password } = req.body;
+/*  let found = false;
   
-  admin.database().ref('/users/').once('value')
+    admin.database().ref('/users/').once('value')
     .then((snapshot) => {
       snapshot.forEach((user) => {
         if (user.val().email === email) {
@@ -26,19 +26,41 @@ exports.createUser = functions.https.onRequest((req, res) => {
       if (found) {
         throw new Error(`L'utente ${email} esiste già!`);
       }
-      const key = admin.database().ref('/users/').push().key;
-      return admin.database().ref('/users/').child(key).set({
+      return admin.auth().createUser({
+        email,
+        emailVerified: false,
+        password,
         name,
         surname,
+        disabled: false
+      })      
+    }) */
+
+  admin.auth().verifyIdToken(idToken)
+    .then((decodedToken) => admin.database().ref('/users/' + decodedToken.uid).once('value'))
+    .then((snapshot) => {
+      if (!snapshot || !snapshot.val() || !snapshot.val().admin) {
+        throw new Error(`Non hai i privilegi per creare nuovi utenti!`);
+      }
+      return admin.auth().createUser({
         email,
+        emailVerified: false,
         password,
-      })  
-    })
-    .then(() => res.send({ message: `Creato utente ${email}!` }))
-    .catch((error) => {
-      res.status(500).send({
-        error: true,
-        message: error.message,
+        name,
+        surname,
+        disabled: false
       });
-    });
+    })
+    .then((userRecord) => admin.database().ref('/users/').child(userRecord.uid).set({
+      name,
+      surname,
+      email,
+    }))
+    .then(() => res.send({
+      message: `Creato utente ${email}!`
+      }))
+    .catch((error) => res.status(500).send({
+      error: true,
+      message: error.message,
+    }));
 });

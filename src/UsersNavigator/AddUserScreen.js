@@ -32,28 +32,26 @@ class AddUserScreen extends Component {
     const URL = 'https://us-central1-exp-app-6cbc4.cloudfunctions.net/createUser';
     const { email, password, name, surname } = this.state;
 
-    fetch(URL, {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        name,
-        surname,
-        email,
-        password,
-      }),
-    })
+    firebase.auth().currentUser.getIdToken(true)
+      .then((idToken) => fetch(
+        URL, 
+        {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            idToken,
+            name,
+            surname,
+            email,
+            password,
+          }),
+        }))
       .then((response) => response.json())
-      .then((responseJson) => {
-        console.log(JSON.stringify(responseJson))
-        alert(responseJson.message);
-      })
-      .catch((error) => {
-        console.log(JSON.stringify(error))
-        alert(`${error.name}: ${error.message}`);
-      });
+      .then((responseJson) => alert(responseJson.message))
+      .catch((error) => alert(`${error.name}: ${error.message}`));
   }
 
   render() {
