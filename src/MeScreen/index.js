@@ -13,6 +13,7 @@ class LogoutScreen extends Component {
     return (
       <View style={styles.container}>
         <Text>LogoutScreen</Text>
+        <Text>{JSON.stringify(firebase.auth().currentUser.email)}</Text>
         <Button
           title="logout"
           onPress={() => {

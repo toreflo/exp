@@ -9,7 +9,7 @@ const createUser = (req, res) => {
   const { idToken, name, surname, email, password } = req.body;
 
   admin.auth().verifyIdToken(idToken)
-    .then((decodedToken) => admin.database().ref('/users/' + decodedToken.uid).once('value'))
+    .then((decodedToken) => admin.database().ref('/admins/' + decodedToken.uid).once('value'))
     .then((snapshot) => {
       if (!snapshot || !snapshot.val() || !snapshot.val().admin) {
         throw new Error(`Non hai i privilegi per creare nuovi utenti!`);
@@ -41,7 +41,7 @@ const deleteUser = (req, res) => {
   const { idToken, uid } = req.body;
 
   admin.auth().verifyIdToken(idToken)
-    .then((decodedToken) => admin.database().ref('/users/' + decodedToken.uid).once('value'))
+    .then((decodedToken) => admin.database().ref('/admins/' + decodedToken.uid).once('value'))
     .then((snapshot) => {
       if (!snapshot || !snapshot.val() || !snapshot.val().admin) {
         throw new Error(`Non hai i privilegi per eliminare utenti!`);

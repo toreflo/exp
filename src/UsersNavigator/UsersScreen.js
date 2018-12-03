@@ -103,11 +103,10 @@ class UsersScreen extends Component {
 
   async deleteRow(data, secId, rowId, rowMap) {
     rowMap[`${secId}${rowId}`].props.closeRow();
-    const URL = `${config.baseURL}/httpRequests`;
 
     firebase.auth().currentUser.getIdToken(true)
       .then((idToken) => fetch(
-        URL, 
+        config.httpURL, 
         {
           method: 'POST',
           headers: {

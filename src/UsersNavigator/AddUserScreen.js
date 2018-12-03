@@ -31,12 +31,10 @@ class AddUserScreen extends Component {
   }
 
   addUser() {
-    const URL = `${config.baseURL}/httpRequests`;
     const { email, password, name, surname } = this.state;
-
     firebase.auth().currentUser.getIdToken(true)
       .then((idToken) => fetch(
-        URL, 
+        config.httpURL, 
         {
           method: 'POST',
           headers: {
