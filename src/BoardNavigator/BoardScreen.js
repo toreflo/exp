@@ -49,11 +49,22 @@ class BoardScreen extends Component {
       newData.splice(idx, 1);
       this.setState({ messages: newData });
     });
+    this.db.ref('/messages/board/').on('child_changed', (snapshot) => {
+      if (snapshot.val() && snapshot.val().exists) return;
+
+      const newData = [...this.state.messages];
+      const idx = newData.findIndex(item => item.key === snapshot.key);
+      if (idx !== -1) {
+        newData[idx] = snapshot;
+        this.setState({ messages: newData });
+      }
+    });
   }
 
   componentWillUnmount() {
     this.db.ref('/messages/board/').off('child_added');
     this.db.ref('/messages/board/').off('child_removed');
+    this.db.ref('/messages/board/').off('child_changed');
   }
 
   goToDetails(message) {
@@ -83,9 +94,8 @@ class BoardScreen extends Component {
               </CardItem>
               <CardItem
                 button
-                onPress={ () => this.goToDetails(data.val()) }
+                onPress={ () => this.goToDetails(data) }
               >
-
                 <Body>
                   <Text> {body} </Text>
                 </Body>
