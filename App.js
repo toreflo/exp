@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Spinner } from 'native-base';
 import firebase from 'firebase';
+import { Font } from "expo";
 
 import HomeNavigator from './src/HomeNavigator';
 import WelcomeNavigator from './src/WelcomeNavigator';
@@ -15,9 +16,13 @@ export default class App extends React.Component {
     };
   }
 
-  componentWillMount() {
+  async componentWillMount() {
     const firebaseApp = firebase.initializeApp(config.firebaseConfig);
-    // firebaseApp.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+    await Font.loadAsync({
+      Roboto: require("native-base/Fonts/Roboto.ttf"),
+      Roboto_medium: require("native-base/Fonts/Roboto_medium.ttf")
+    });
+    // this.setState({ loading: false });
   }
 
   /**
@@ -26,7 +31,6 @@ export default class App extends React.Component {
    */
   componentDidMount() {
     this.authRemoveSubscription = firebase.auth().onAuthStateChanged((user) => {
-
       this.setState({
         loading: false,
         user,
