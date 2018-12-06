@@ -15,7 +15,6 @@ import {
 import { StackActions, NavigationActions } from 'react-navigation';
 import firebase from 'firebase';
 import StackHeader from '../components/StackHeader';
-import { checkCollection } from '../lib';
 
 class WriteMessageScreen extends Component {
   static navigationOptions = ({ navigation }) => {
@@ -34,6 +33,7 @@ class WriteMessageScreen extends Component {
 
     this.sendMessage = this.sendMessage.bind(this);
     this.updateMessage = this.updateMessage.bind(this);
+    this.togglePinned = this.togglePinned.bind(this);
   }
 
   componentDidMount() {
@@ -41,15 +41,24 @@ class WriteMessageScreen extends Component {
     let callback = this.sendMessage;
     let iconName = 'ios-send';
     if (editInfo) {
-      this.state.title = editInfo.title;
-      this.state.body = editInfo.body;
-      this.state.key = editInfo.key;
+      this.setState({
+        title: editInfo.title,
+        body: editInfo.body,
+        key: editInfo.key,
+        pinned: editInfo.pinned,
+      })
       callback = this.updateMessage;
       iconName = 'ios-checkmark-circle';      
     }
     this.props.navigation.setParams({
       rightButtons: [{
         key: 1,
+        callback: this.togglePinned,
+        toggle: true,
+        active: editInfo ? editInfo.pinned : false,
+        icon: <Icon type="MaterialCommunityIcons" name="pin" />,
+      }, {
+        key: 2,
         callback,
         icon: <Icon type="Ionicons" name={iconName} />,
       }],
@@ -60,23 +69,23 @@ class WriteMessageScreen extends Component {
     this.sendMessage(true);
   }
 
-  sendMessage(updateMode) {
-    const { title, body } = this.state;
-    checkCollection('/messages/')
-      .then(() => checkCollection('/messages/board/'))
-      .then(() => {
-        let key;
-        let message = { title, body };
+  togglePinned() {
+    this.setState(prevState => ({ pinned: !prevState.pinned}));
+  }
 
-        if (updateMode) {
-          ({ key } = this.state);
-          message.lastUpdate = firebase.database.ServerValue.TIMESTAMP;
-        } else {
-          ({ key } = firebase.database().ref('/messages/board/').push());
-          message.creationTime = firebase.database.ServerValue.TIMESTAMP;
-        }
-        firebase.database().ref('/messages/board/' + key).set(message);
-      })
+  sendMessage(updateMode) {
+    const { title, body, pinned } = this.state;
+
+    let key;
+    const message = { title, body, pinned: pinned === true };
+    if (updateMode) {
+      ({ key } = this.state);
+      message.lastUpdate = firebase.database.ServerValue.TIMESTAMP;
+    } else {
+      ({ key } = firebase.database().ref('/messages/board/').push());
+      message.creationTime = firebase.database.ServerValue.TIMESTAMP;
+    }
+    firebase.database().ref('/messages/board/' + key).set(message)
       .then(() => {
         if (updateMode) {
           this.props.navigation.popToTop();

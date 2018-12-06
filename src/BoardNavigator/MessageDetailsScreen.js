@@ -14,7 +14,10 @@ class MessageDetailsScreen extends Component {
     this.removeMessage = this.removeMessage.bind(this);
   }
   componentDidMount() {
-    this.props.navigation.setParams({ title: this.props.navigation.getParam('message').val().title});
+    const { title, pinned } = this.props.navigation.getParam('message').val();
+    let headerTitle = [<Text key={1}>{title}</Text>];
+    if (pinned) headerTitle.push(<Icon key={2} type="MaterialCommunityIcons" name="pin" />);
+    this.props.navigation.setParams({ title: headerTitle});
     this.props.navigation.setParams({
       rightButtons: [{
         key: 1,

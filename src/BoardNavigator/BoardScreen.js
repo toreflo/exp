@@ -27,44 +27,56 @@ class BoardScreen extends Component {
     };
     this.db = firebase.database();
     this.goToDetails = this.goToDetails.bind(this);
+    this.childAdded = this.childAdded.bind(this);
+    this.childRemoved = this.childRemoved.bind(this);
+    this.childChanged = this.childChanged.bind(this);
+    this.sortMessages = this.sortMessages.bind(this);
   }
 
   componentDidMount() {
-    this.db.ref('/messages/board/').on('child_added', (snapshot) => {
-      if (snapshot.val() && snapshot.val().exists) return;
-
-      const newState = {};
-      if (this.state.loading) newState.loading = false;
-  
-      const newData = [...this.state.messages];
-      newData.push(snapshot);
-      newState.messages = newData;
-      this.setState(newState);
-    });
-    this.db.ref('/messages/board/').on('child_removed', (snapshot) => {
-      const idx = this.state.messages.findIndex(user => user.key === snapshot.key);
-      if (idx === -1) return;
-
-      const newData = [...this.state.messages];
-      newData.splice(idx, 1);
-      this.setState({ messages: newData });
-    });
-    this.db.ref('/messages/board/').on('child_changed', (snapshot) => {
-      if (snapshot.val() && snapshot.val().exists) return;
-
-      const newData = [...this.state.messages];
-      const idx = newData.findIndex(item => item.key === snapshot.key);
-      if (idx !== -1) {
-        newData[idx] = snapshot;
-        this.setState({ messages: newData });
-      }
-    });
+    this.db.ref('/messages/board/').on('child_added', this.childAdded);
+    this.db.ref('/messages/board/').on('child_removed', this.childRemoved);
+    this.db.ref('/messages/board/').on('child_changed', this.childChanged);
   }
 
   componentWillUnmount() {
     this.db.ref('/messages/board/').off('child_added');
     this.db.ref('/messages/board/').off('child_removed');
     this.db.ref('/messages/board/').off('child_changed');
+  }
+
+  childAdded(snapshot) {
+    const newState = {};
+    if (this.state.loading) newState.loading = false;
+
+    const newData = [...this.state.messages];
+    newData.push(snapshot);
+    newState.messages = newData.sort(this.sortMessages);
+    this.setState(newState);
+  }
+
+  childChanged(snapshot) {
+    const newData = [...this.state.messages];
+    const idx = newData.findIndex(item => item.key === snapshot.key);
+    if (idx !== -1) {
+      newData[idx] = snapshot;
+      this.setState({ messages: newData.sort(this.sortMessages) });
+    }
+  }
+  
+  childRemoved(snapshot) {
+    const idx = this.state.messages.findIndex(user => user.key === snapshot.key);
+    if (idx === -1) return;
+
+    const newData = [...this.state.messages];
+    newData.splice(idx, 1);
+    this.setState({ messages: newData.sort(this.sortMessages) });
+  }
+
+  sortMessages(a, b) {
+    if (a.val().pinned === b.val().pinned) return (b.val().creationTime - a.val().creationTime);
+    if (a.val().pinned) return -1;
+    return 1;
   }
 
   goToDetails(message) {
@@ -87,10 +99,12 @@ class BoardScreen extends Component {
           const body = data.val().body.length > MAX_LEN ?
             data.val().body.substring(0, MAX_LEN) + '...' :
             data.val().body; 
+          
           return (
             <Card style={{ borderRadius: 10, overflow: 'hidden' }}>
               <CardItem header>
                 <H1> {data.val().title} </H1>
+                {data.val().pinned ? <Icon type="MaterialCommunityIcons" name="pin" /> : null}
               </CardItem>
               <CardItem
                 button
