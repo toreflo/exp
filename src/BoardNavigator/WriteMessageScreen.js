@@ -33,7 +33,6 @@ class WriteMessageScreen extends Component {
 
     this.sendMessage = this.sendMessage.bind(this);
     this.updateMessage = this.updateMessage.bind(this);
-    this.togglePinned = this.togglePinned.bind(this);
   }
 
   componentDidMount() {
@@ -45,7 +44,6 @@ class WriteMessageScreen extends Component {
         title: editInfo.title,
         body: editInfo.body,
         key: editInfo.key,
-        pinned: editInfo.pinned,
       })
       callback = this.updateMessage;
       iconName = 'ios-checkmark-circle';      
@@ -53,12 +51,6 @@ class WriteMessageScreen extends Component {
     this.props.navigation.setParams({
       rightButtons: [{
         key: 1,
-        callback: this.togglePinned,
-        toggle: true,
-        active: editInfo ? editInfo.pinned : false,
-        icon: <Icon type="MaterialCommunityIcons" name="pin" />,
-      }, {
-        key: 2,
         callback,
         icon: <Icon type="Ionicons" name={iconName} />,
       }],
@@ -69,15 +61,11 @@ class WriteMessageScreen extends Component {
     this.sendMessage(true);
   }
 
-  togglePinned() {
-    this.setState(prevState => ({ pinned: !prevState.pinned}));
-  }
-
   sendMessage(updateMode) {
-    const { title, body, pinned } = this.state;
+    const { title, body } = this.state;
 
     let key;
-    const message = { title, body, pinned: pinned === true };
+    const message = { title, body };
     if (updateMode) {
       ({ key } = this.state);
       message.lastUpdate = firebase.database.ServerValue.TIMESTAMP;

@@ -31,6 +31,7 @@ class BoardScreen extends Component {
     this.childRemoved = this.childRemoved.bind(this);
     this.childChanged = this.childChanged.bind(this);
     this.sortMessages = this.sortMessages.bind(this);
+    this.togglePinned = this.togglePinned.bind(this);
   }
 
   componentDidMount() {
@@ -73,6 +74,14 @@ class BoardScreen extends Component {
     this.setState({ messages: newData.sort(this.sortMessages) });
   }
 
+  togglePinned(data) {
+    this.db.ref().update({['/messages/board/' + data.key + '/pinned/']: !data.val().pinned})
+      .catch((error) => {
+        console.log(JSON.stringify(error));
+        alert(`${error.name}: ${error.message}`);
+      });
+  }
+
   sortMessages(a, b) {
     if (a.val().pinned === b.val().pinned) return (b.val().creationTime - a.val().creationTime);
     if (a.val().pinned) return -1;
@@ -99,12 +108,23 @@ class BoardScreen extends Component {
           const body = data.val().body.length > MAX_LEN ?
             data.val().body.substring(0, MAX_LEN) + '...' :
             data.val().body; 
-          
+          const right = (
+            <Button
+              transparent
+              danger={data.val().pinned}
+              onPress={() => this.togglePinned(data)}
+            >
+              <Icon type="MaterialCommunityIcons" name="pin" style={{fontSize: 16}}/>
+            </Button>
+          );
+
           return (
             <Card style={{ borderRadius: 10, overflow: 'hidden' }}>
               <CardItem header>
-                <H1> {data.val().title} </H1>
-                {data.val().pinned ? <Icon type="MaterialCommunityIcons" name="pin" /> : null}
+                <Body style={{alignItems: 'flex-start', justifyContent: 'flex-start'}}>
+                  <H1> {data.val().title} </H1>
+                </Body>
+                {right}
               </CardItem>
               <CardItem
                 button
