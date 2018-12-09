@@ -15,6 +15,8 @@ import {
   Body,
   H1,
 } from "native-base";
+import moment from 'moment';
+import 'moment/locale/it';
 import firebase from 'firebase';
 
 class BoardScreen extends Component {
@@ -100,47 +102,50 @@ class BoardScreen extends Component {
     let content;
     const spinner = (<Spinner />);
     const list = (
-      <Content>
-      <ListView
-        style={{ paddingTop: 24 }}
-        dataSource={this.ds.cloneWithRows(this.state.messages)}
-        renderRow={(data) => {
-          const body = data.val().body.length > MAX_LEN ?
-            data.val().body.substring(0, MAX_LEN) + '...' :
-            data.val().body; 
-          const right = (
-            <Button
-              transparent
-              danger={data.val().pinned}
-              onPress={() => this.togglePinned(data)}
-            >
-              <Icon type="MaterialCommunityIcons" name="pin" style={{fontSize: 16}}/>
-            </Button>
-          );
-
-          return (
-            <Card style={{ borderRadius: 10, overflow: 'hidden' }}>
-              <CardItem header>
-                <Body style={{alignItems: 'flex-start', justifyContent: 'flex-start'}}>
-                  <H1> {data.val().title} </H1>
-                </Body>
-                {right}
-              </CardItem>
-              <CardItem
-                button
-                onPress={ () => this.goToDetails(data) }
+      <Content style={{ backgroundColor: '#313131' }}>
+        <ListView
+          style={{ padding: 15, paddingBottom: 75 }}
+          dataSource={this.ds.cloneWithRows(this.state.messages)}
+          renderRow={(data) => {
+            const body = data.val().body.length > MAX_LEN ?
+              data.val().body.substring(0, MAX_LEN) + '...' :
+              data.val().body; 
+            const right = (
+              <Button
+                transparent
+                warning={data.val().pinned}
+                light={!data.val().pinned}
+                onPress={() => this.togglePinned(data)}
               >
-                <Body>
-                  <Text> {body} </Text>
-                </Body>
-              </CardItem>
-              <CardItem footer>
-                <Text> {data.val().timestamp} </Text>
-              </CardItem>
-            </Card>
-          );
-        }}
-      />
+                <Icon type="Ionicons" name="ios-star" style={{fontSize: 20}}/>
+              </Button>
+            );
+  
+            return (
+              <Card style={{ borderRadius: 10, overflow: 'hidden' }}>
+                <CardItem header>
+                  <Body style={{alignItems: 'flex-start', justifyContent: 'flex-start'}}>
+                    <H1> {data.val().title} </H1>
+                  </Body>
+                  {right}
+                </CardItem>
+                <CardItem
+                  button
+                  onPress={ () => this.goToDetails(data) }
+                >
+                  <Body>
+                    <Text> {body} </Text>
+                  </Body>
+                </CardItem>
+                <CardItem style={{justifyContent: 'flex-end'}}>
+                  <Text style={{fontSize: 10}}>
+                    {moment.unix(data.val().creationTime/1000).format('LLL')} 
+                  </Text>
+                </CardItem>
+              </Card>
+            );
+          }}
+        />
       </Content>
     );
 
