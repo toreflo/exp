@@ -1,0 +1,14 @@
+const firebaseConfig = {
+  apiKey: "<firebase-apiKey>",
+  authDomain: "<firebase-authDomain>",
+  databaseURL: "<firebase-databaseURL>",
+  projectId: "<firebase-projectId>",
+  storageBucket: "<firebase-storageBucket>,
+  messagingSenderId: "<firebase-messagingSenderId9>"
+};
+const httpURL = `https://us-central1-${firebaseConfig.projectId}.cloudfunctions.net/<cloudFunctionName>`;
+
+export default {
+  firebaseConfig,
+  httpURL,
+};
