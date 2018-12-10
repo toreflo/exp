@@ -4,10 +4,10 @@ import { createBottomTabNavigator } from 'react-navigation';
 
 import getTheme from '../../native-base-theme/components';
 import exp from '../../native-base-theme/variables/exp';
-import BoardNavigator from '../BoardNavigator';
-import UsersNavigator from '../UsersNavigator';
-import GroupsNavigator from '../GroupsNavigator';
-import MeScreen from '../MeScreen';
+import BoardNavigator from './BoardNavigator';
+import UsersNavigator from './UsersNavigator';
+import GroupsNavigator from './GroupsNavigator';
+import MeScreen from '../screens/MeScreen';
 
 const HomeTabNavigator = createBottomTabNavigator({
   BoardNavigator: { screen: BoardNavigator },

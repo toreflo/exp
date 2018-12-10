@@ -4,8 +4,7 @@ import { Spinner } from 'native-base';
 import firebase from 'firebase';
 import { Font } from "expo";
 
-import HomeNavigator from './src/HomeNavigator';
-import WelcomeNavigator from './src/WelcomeNavigator';
+import { HomeNavigator, WelcomeNavigator, pippo } from './src/navigators';
 import config from './config';
 import * as gbl from './src/gbl';
 
@@ -23,7 +22,6 @@ export default class App extends React.Component {
       Roboto: require("native-base/Fonts/Roboto.ttf"),
       Roboto_medium: require("native-base/Fonts/Roboto_medium.ttf")
     });
-    // this.setState({ loading: false });
   }
 
   /**

@@ -1,9 +1,9 @@
 import React from "react";
 import { createStackNavigator } from 'react-navigation';
 
-import BoardScreen from './BoardScreen';
-import WriteMessageScreen from './WriteMessageScreen';
-import MessageDetailsScreen from './MessageDetailsScreen';
+import BoardScreen from '../screens/BoardScreen';
+import WriteMessageScreen from '../screens/WriteMessageScreen';
+import MessageDetailsScreen from '../screens/MessageDetailsScreen';
 import StackHeader from '../components/StackHeader';
 import { initialRouteKey } from '../gbl';
 

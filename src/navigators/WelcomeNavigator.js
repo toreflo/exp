@@ -2,9 +2,9 @@ import React from "react";
 import { createStackNavigator } from 'react-navigation';
 import { Header, Left, Right, Body, Title, Icon, Button } from 'native-base';
 
-import WelcomeScreen from './WelcomeScreen';
-import LoginScreen from './LoginScreen';
-import SignUpScreen from './SignUpScreen';
+import WelcomeScreen from '../screens/WelcomeScreen';
+import LoginScreen from '../screens/LoginScreen';
+import SignUpScreen from '../screens/SignUpScreen';
 import StackHeader from '../components/StackHeader';
 import { initialRouteKey } from '../gbl';
 
