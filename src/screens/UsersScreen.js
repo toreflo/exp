@@ -1,9 +1,10 @@
-import React, { Component } from "react";
+import React, { Component } from 'react';
+import { connect } from 'react-redux';
 import { 
   View,
   ListView,
   StyleSheet
-} from "react-native";
+} from 'react-native';
 import {
   Container,
   Header,
@@ -58,38 +59,10 @@ class UsersScreen extends Component {
     super(props);
     this.ds = new ListView.DataSource({ rowHasChanged: (r1, r2) => r1 !== r2 });
     this.state = {
-      users: [],
       newUser: '',
-      loading: true,
     };
     this.db = firebase.database();
     this.addUser = this.addUser.bind(this);
-  }
-
-  componentDidMount() {
-    const userId = firebase.auth().currentUser.uid;
-    this.db.ref('/users/').on('child_added', (snapshot) => {
-      const newState = {};
-      if (this.state.loading) newState.loading = false;
-  
-      const newData = [...this.state.users];
-      newData.push(snapshot);
-      newState.users = newData;
-      this.setState(newState);
-    });
-    this.db.ref('/users/').on('child_removed', (snapshot) => {
-      const idx = this.state.users.findIndex(user => user.key === snapshot.key);
-      if (idx === -1) return;
-
-      const newData = [...this.state.users];
-      newData.splice(idx, 1);
-      this.setState({ users: newData });
-    });
-  }
-
-  componentWillUnmount() {
-    this.db.ref('/users/').off('child_added');
-    this.db.ref('/users/').off('child_removed');
   }
 
   addUser() {
@@ -120,21 +93,19 @@ class UsersScreen extends Component {
   }
 
   render() {
-    let content;
-    const spinner = (<Spinner />);
-    const list = (
+    const content = (
       <List
         style={{ paddingTop: 24 }}
         leftOpenValue={75}
         rightOpenValue={-75}
-        dataSource={this.ds.cloneWithRows(this.state.users)}
+        dataSource={this.ds.cloneWithRows(this.props.users)}
         renderRow={(data) => (
           <ListItem onPress={() => this.props.navigation.navigate(
             'UserDetailsScreen',
-            { user: data.val() },
+            { user: data },
             )}
           >
-            <Text> {`${data.val().name} ${data.val().surname}`} </Text>
+            <Text> {`${data.name} ${data.surname}`} </Text>
           </ListItem>
         )}
         renderLeftHiddenRow={(data, secId, rowId, rowMap) => (
@@ -151,8 +122,6 @@ class UsersScreen extends Component {
           </Button>
         )}
       />);
-    if (this.state.loading) content = spinner;
-    else content = list;
 
     return (
       <Container>
@@ -172,7 +141,12 @@ class UsersScreen extends Component {
     );
   }
 }
-export default UsersScreen;
+
+const mapStateToProps = (state) => ({
+  users: state.users,
+});
+
+export default connect(mapStateToProps)(UsersScreen);
 
 const styles = StyleSheet.create({
   addUser: {
