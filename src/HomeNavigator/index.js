@@ -5,16 +5,14 @@ import { createBottomTabNavigator } from 'react-navigation';
 import getTheme from '../../native-base-theme/components';
 import exp from '../../native-base-theme/variables/exp';
 import BoardNavigator from '../BoardNavigator';
-import ChatNavigator from '../ChatNavigator';
 import UsersNavigator from '../UsersNavigator';
 import GroupsNavigator from '../GroupsNavigator';
 import MeScreen from '../MeScreen';
 
 const HomeTabNavigator = createBottomTabNavigator({
   BoardNavigator: { screen: BoardNavigator },
-  ChatNavigator: { screen: ChatNavigator },
-  UsersNavigator: { screen: UsersNavigator },
   GroupsNavigator: { screen: GroupsNavigator },
+  UsersNavigator: { screen: UsersNavigator },
   MeScreen: { screen: MeScreen },
 }, {
   tabBarComponent: ({ navigation }) => {
@@ -32,7 +30,7 @@ const HomeTabNavigator = createBottomTabNavigator({
             <Button
               vertical
               active={navigation.state.index === 1}
-              onPress={() => navigation.navigate('ChatNavigator')}
+              onPress={() => navigation.navigate('GroupsNavigator')}
             >
               <Icon type="FontAwesome" name="envelope" />
             </Button>
@@ -41,19 +39,11 @@ const HomeTabNavigator = createBottomTabNavigator({
               active={navigation.state.index === 2}
               onPress={() => navigation.navigate('UsersNavigator')}
             >
-              <Icon type="FontAwesome" name="user" />
+              <Icon type="FontAwesome" name="group" />
             </Button>
             <Button
               vertical
               active={navigation.state.index === 3}
-              onPress={() => navigation.navigate('GroupsNavigator')}
-            >
-              <Icon type="FontAwesome" name="users" />
-              {/* <Text>Gruppi</Text> */}
-            </Button>
-            <Button
-              vertical
-              active={navigation.state.index === 4}
               onPress={() => navigation.navigate('MeScreen')}
             >
               <Icon type="FontAwesome" name="user" />

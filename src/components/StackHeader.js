@@ -43,7 +43,7 @@ class StackHeader extends Component {
 
   render() {
     const { navigation } = this.props;
-    let left = <Left />;
+    let left = <Left/>;
     let right = null;
     let icon = this.props.modal ? 
       <Icon type="Ionicons" name="ios-close" /> : <Icon type="Ionicons" name="ios-arrow-back" />;
