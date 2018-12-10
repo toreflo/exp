@@ -54,6 +54,9 @@ class AddUserToGroupScreen extends Component {
         this.userRemoved(snapshot.key);
       }
     });
+    this.db.ref('/dummy').once('value', (snapshot) => {
+      if (this.state.loading) this.setState({loading: false});
+    });
   }
 
   userAdded(userSnapshot) {
@@ -61,8 +64,6 @@ class AddUserToGroupScreen extends Component {
     if (idx !== -1) return;
 
     const newState = {};
-    if (this.state.loading) newState.loading = false;
-
     const newData = [...this.state.users];
     newData.push(userSnapshot);
     newState.users = newData;
@@ -97,8 +98,8 @@ class AddUserToGroupScreen extends Component {
 
   render() {
     let content;
-    const { key: groupKey } = this.props.navigation.getParam('group');
     const spinner = (<Spinner />);
+    const noUser = (<Text>Tutti gli utenti appartengono già al gruppo!</Text>);
     const list = (
       <List
         style={{ paddingTop: 24 }}
@@ -131,6 +132,7 @@ class AddUserToGroupScreen extends Component {
         }}
       />);
     if (this.state.loading) content = spinner;
+    else if (this.state.users.length === 0) content = noUser;
     else content = list;
 
     return (

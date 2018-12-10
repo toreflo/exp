@@ -44,6 +44,8 @@ class WriteMessageScreen extends Component {
         title: editInfo.title,
         body: editInfo.body,
         key: editInfo.key,
+        creationTime: editInfo.creationTime,
+        pinned: editInfo.pinned,
       })
       callback = this.updateMessage;
       iconName = 'ios-checkmark-circle';      
@@ -62,16 +64,19 @@ class WriteMessageScreen extends Component {
   }
 
   sendMessage(updateMode) {
-    const { title, body } = this.state;
+    const { title, body, creationTime, pinned } = this.state;
 
     let key;
     const message = { title, body };
     if (updateMode) {
       ({ key } = this.state);
       message.lastUpdate = firebase.database.ServerValue.TIMESTAMP;
+      message.creationTime = creationTime;
+      message.pinned = pinned;
     } else {
       ({ key } = firebase.database().ref('/messages/board/').push());
       message.creationTime = firebase.database.ServerValue.TIMESTAMP;
+      message.pinned = false;
     }
     firebase.database().ref('/messages/board/' + key).set(message)
       .then(() => {

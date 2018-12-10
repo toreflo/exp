@@ -20,8 +20,7 @@ import {
   Fab,
 } from 'native-base';
 import firebase from 'firebase';
-
-import config from '../../config';
+import Dialog from "react-native-dialog";
 
 class GroupDetailsScreen extends Component {
   constructor(props) {
@@ -29,24 +28,22 @@ class GroupDetailsScreen extends Component {
     this.ds = new ListView.DataSource({ rowHasChanged: (r1, r2) => r1 !== r2 });
     this.state = {
       users: [],
-      newUser: '',
       loading: true,
     };
     this.db = firebase.database();
     this.deleteUser = this.deleteUser.bind(this);
+    this.removeGroup = this.removeGroup.bind(this);
+    this.showConfirmDialog = this.showConfirmDialog.bind(this);
+    this.hideConfirmDialog = this.hideConfirmDialog.bind(this);
   }
 
   componentDidMount() {
     const { key } = this.props.navigation.getParam('group');
     this.db.ref(`/groups/${key}/users/`).on('child_added', ({key: userKey}) => {
-      const newState = {};
-      if (this.state.loading) newState.loading = false;
-  
       this.db.ref(`/users/${userKey}`).once('value', (snapshot) => {
         const newData = [...this.state.users];
         newData.push(snapshot);
-        newState.users = newData;
-        this.setState(newState);  
+        this.setState({users: newData});  
       });
     });
     this.db.ref(`/groups/${key}/users/`).on('child_removed', ({key: userKey}) => {
@@ -57,6 +54,16 @@ class GroupDetailsScreen extends Component {
       newData.splice(idx, 1);
       this.setState({ users: newData });
     });
+    this.props.navigation.setParams({
+      rightButtons: [{
+        key: 1,
+        callback: this.showConfirmDialog,
+        icon: <Icon type="Ionicons" name="ios-trash" />,
+      }],
+    });
+    this.db.ref('/dummy').once('value', () => {
+      if (this.state.loading) this.setState({loading: false});
+    });
   }
 
   componentWillUnmount() {
@@ -65,6 +72,14 @@ class GroupDetailsScreen extends Component {
     this.db.ref(`/groups/${key}/users/`).off('child_removed');
   }
 
+  showConfirmDialog() {
+    this.setState({showConfirm: true});
+  }
+
+  hideConfirmDialog() {
+    this.setState({showConfirm: false}) 
+  }
+  
   deleteUser(user, secId, rowId, rowMap) {
     rowMap[`${secId}${rowId}`].props.closeRow();
     const { key: groupKey } = this.props.navigation.getParam('group');
@@ -77,6 +92,21 @@ class GroupDetailsScreen extends Component {
       .catch((error) => alert(`${error.name}: ${error.message}`));
   }
 
+  removeGroup() {
+    this.setState({showConfirm: false}) 
+    const { key: groupKey } = this.props.navigation.getParam('group');
+
+    const updates = this.state.users.reduce((userUpdates, user) => ({
+      ...userUpdates,
+      [`/users/${user.key}/groups/${groupKey}`]: null,
+    }), {});
+
+    updates[`/groups/${groupKey}`] = null;
+    this.db.ref().update(updates)
+      .then(() => this.props.navigation.navigate('GroupsScreen'))
+      .catch((error) => alert(`${error.name}: ${error.message}`));
+  }
+
   render() {
     let content;
     const group = this.props.navigation.getParam('group');
@@ -84,14 +114,11 @@ class GroupDetailsScreen extends Component {
     const list = (
       <List
         style={{ paddingTop: 24 }}
+        enableEmptySections
         rightOpenValue={-75}
         dataSource={this.ds.cloneWithRows(this.state.users)}
         renderRow={(data) => (
-          <ListItem onPress={() => this.props.navigation.navigate(
-            'UserDetailsScreen',
-            { user: data.val() },
-            )}
-          >
+          <ListItem>
             <Text> {`${data.val().name} ${data.val().surname}`} </Text>
           </ListItem>
         )}
@@ -117,6 +144,16 @@ class GroupDetailsScreen extends Component {
             onPress={() => this.props.navigation.navigate('AddUserToGroupScreen', { group })}>
             <Icon type="FontAwesome" name="user-plus" />
           </Fab>
+        </View>
+        <View>
+          <Dialog.Container visible={this.state.showConfirm}>
+            <Dialog.Title>Conferma cancellazione</Dialog.Title>
+            <Dialog.Description>
+              Sei sicuro di voler cancellare il gruppo?
+            </Dialog.Description>
+            <Dialog.Button label="Annulla" onPress={this.hideConfirmDialog}/>
+            <Dialog.Button label="Conferma" onPress={this.removeGroup}/>
+          </Dialog.Container>
         </View>
       </Container>
     );

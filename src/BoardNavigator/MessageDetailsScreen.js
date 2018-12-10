@@ -5,14 +5,19 @@ import {
 } from "react-native";
 import { Container, Content, Card, CardItem, Body, H1, Icon, Text } from 'native-base';
 import firebase from 'firebase';
+import Dialog from "react-native-dialog";
 
 class MessageDetailsScreen extends Component {
   constructor(props) {
     super(props);
 
+    this.state = {};
+    
     this.editMessage = this.editMessage.bind(this);
     this.removeMessage = this.removeMessage.bind(this);
-  }
+    this.showConfirmDialog = this.showConfirmDialog.bind(this);
+    this.hideConfirmDialog = this.hideConfirmDialog.bind(this);
+}
   componentDidMount() {
     const { title } = this.props.navigation.getParam('message').val();
     let headerTitle = [<Text key={1}>{title}</Text>];
@@ -24,30 +29,41 @@ class MessageDetailsScreen extends Component {
         icon: <Icon type="FontAwesome" name="pencil" />,
       }, {
         key: 2,
-        callback: this.removeMessage,
+        callback: this.showConfirmDialog,
         icon: <Icon type="Ionicons" name="ios-trash" />,
       }],
     });
   }
 
+  showConfirmDialog() {
+    this.setState({showConfirm: true});
+  }
+
+  hideConfirmDialog() {
+    this.setState({showConfirm: false}) 
+  }
+  
   removeMessage() {
+    this.hideConfirmDialog();
     const { key } = this.props.navigation.getParam('message');
     firebase.database().ref('/messages/board/' + key).set(null)
-    .then(() => this.props.navigation.goBack())
-    .catch((error) => {
-      console.log(JSON.stringify(error));
-      alert(`${error.name}: ${error.message}`);
-    });
+      .then(() => this.props.navigation.goBack())
+      .catch((error) => {
+        console.log(JSON.stringify(error));
+        alert(`${error.name}: ${error.message}`);
+      });
   }
   
   editMessage() {
-    const { title, body } = this.props.navigation.getParam('message').val();
+    const { title, body, creationTime, pinned } = this.props.navigation.getParam('message').val();
     const { key } = this.props.navigation.getParam('message');
     this.props.navigation.navigate('WriteMessageScreen', {
       editInfo: {
         key,
         title,
         body,
+        creationTime,
+        pinned,
       }
     });
   }
@@ -69,6 +85,16 @@ class MessageDetailsScreen extends Component {
             </CardItem>
           </Card>
         </Content>
+        <View>
+          <Dialog.Container visible={this.state.showConfirm}>
+            <Dialog.Title>Conferma cancellazione</Dialog.Title>
+            <Dialog.Description>
+              Sei sicuro di voler cancellare il messaggio?
+            </Dialog.Description>
+            <Dialog.Button label="Annulla" onPress={this.hideConfirmDialog}/>
+            <Dialog.Button label="Conferma" onPress={this.removeMessage}/>
+          </Dialog.Container>
+        </View>
       </Container>
     );
   }

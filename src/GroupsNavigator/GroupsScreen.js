@@ -42,6 +42,9 @@ class ChatGroupsScreen extends Component {
     this.db.ref('/groups/').on('child_added', this.childAdded);
     this.db.ref('/groups/').on('child_removed', this.childRemoved);
     this.db.ref('/groups/').on('child_changed', this.childChanged);
+    this.db.ref('/dummy').once('value', (snapshot) => {
+      if (this.state.loading) this.setState({loading: false});
+    });
   }
 
   componentWillUnmount() {
@@ -51,13 +54,9 @@ class ChatGroupsScreen extends Component {
   }
 
   childAdded(snapshot) {
-    const newState = {};
-    if (this.state.loading) newState.loading = false;
-
     const newData = [...this.state.groups];
     newData.push(snapshot);
-    newState.groups = newData.sort(this.sortGroups);
-    this.setState(newState);
+    this.setState({groups: newData.sort(this.sortGroups)});
   }
 
   childChanged(snapshot) {
@@ -80,7 +79,9 @@ class ChatGroupsScreen extends Component {
 
   createGroup() {
     const { key } = this.db.ref('/groups/').push();
-    this.db.ref('/groups/' + key).set({name: this.state.newGroupName})
+    this.db.ref('/groups/' + key).set({
+      name: this.state.newGroupName,
+    })
       .then(() => this.hideGroupDialog())
       .catch((error) => {
         this.hideGroupDialog();
@@ -89,7 +90,7 @@ class ChatGroupsScreen extends Component {
   }
 
   sortGroups(a, b) {
-    return (b.val().name > a.val().name);
+    return (b.val().name < a.val().name);
   }
 
   goToDetails(group) {
@@ -115,6 +116,7 @@ class ChatGroupsScreen extends Component {
       <Content style={{ backgroundColor: '#313131' }}>
         <ListView
           style={{ padding: 15, paddingBottom: 75 }}
+          enableEmptySections
           dataSource={this.ds.cloneWithRows(this.state.groups)}
           renderRow={(data) => {
             return (
