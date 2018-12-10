@@ -7,6 +7,7 @@ import { Font } from "expo";
 import HomeNavigator from './src/HomeNavigator';
 import WelcomeNavigator from './src/WelcomeNavigator';
 import config from './config';
+import * as gbl from './src/gbl';
 
 export default class App extends React.Component {
   constructor() {
@@ -65,7 +66,7 @@ export default class App extends React.Component {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: gbl.backgroundColor,
     alignItems: 'center',
     justifyContent: 'center',
   },

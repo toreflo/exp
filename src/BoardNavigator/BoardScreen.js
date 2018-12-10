@@ -19,6 +19,8 @@ import moment from 'moment';
 import 'moment/locale/it';
 import firebase from 'firebase';
 
+import * as gbl from '../gbl';
+
 class BoardScreen extends Component {
   constructor(props) {
     super(props);
@@ -102,7 +104,7 @@ class BoardScreen extends Component {
     let content;
     const spinner = (<Spinner />);
     const list = (
-      <Content style={{ backgroundColor: '#313131' }}>
+      <Content>
         <ListView
           style={{ padding: 15, paddingBottom: 75 }}
           dataSource={this.ds.cloneWithRows(this.state.messages)}
@@ -153,7 +155,7 @@ class BoardScreen extends Component {
     else content = list;
 
     return (
-      <Container>
+      <Container style={{ backgroundColor: gbl.backgroundColor }}>
         <View style={{ flex: 1 }}>
           {content}
           <Fab

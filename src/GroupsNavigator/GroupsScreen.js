@@ -18,6 +18,8 @@ import 'moment/locale/it';
 import firebase from 'firebase';
 import Dialog from "react-native-dialog";
 
+import * as gbl from '../gbl';
+
 class ChatGroupsScreen extends Component {
   constructor(props) {
     super(props);
@@ -113,7 +115,7 @@ class ChatGroupsScreen extends Component {
     let content;
     const spinner = (<Spinner />);
     const list = (
-      <Content style={{ backgroundColor: '#313131' }}>
+      <Content>
         <ListView
           style={{ padding: 15, paddingBottom: 75 }}
           enableEmptySections
@@ -150,7 +152,7 @@ class ChatGroupsScreen extends Component {
     else content = list;
 
     return (
-      <Container>
+      <Container  style={{ backgroundColor: gbl.backgroundColor }}>
         <View style={{ flex: 1 }}>
           {content}
           <Fab

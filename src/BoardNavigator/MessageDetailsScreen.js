@@ -7,6 +7,8 @@ import { Container, Content, Card, CardItem, Body, H1, Icon, Text } from 'native
 import firebase from 'firebase';
 import Dialog from "react-native-dialog";
 
+import * as gbl from '../gbl';
+
 class MessageDetailsScreen extends Component {
   constructor(props) {
     super(props);
@@ -72,8 +74,8 @@ class MessageDetailsScreen extends Component {
     const { body, timestamp } = this.props.navigation.getParam('message').val();
 
     return (
-      <Container>
-        <Content>
+      <Container style={{ backgroundColor: gbl.backgroundColor }}>
+        <Content style={{ padding: 15, paddingBottom: 75 }} >
           <Card style={{ borderRadius: 10, overflow: 'hidden' }} >
             <CardItem>
               <Body>
