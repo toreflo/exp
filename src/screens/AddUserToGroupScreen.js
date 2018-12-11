@@ -48,6 +48,7 @@ class AddUserToGroupScreen extends Component {
     const noUser = (<Text>Tutti gli utenti appartengono già al gruppo!</Text>);
     const list = (
       <List
+        removeClippedSubviews={false}
         style={{ paddingTop: 24 }}
         leftOpenValue={75}
         rightOpenValue={-75}

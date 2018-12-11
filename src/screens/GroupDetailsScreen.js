@@ -87,6 +87,7 @@ class GroupDetailsScreen extends Component {
     }
     const content = (
       <List
+        removeClippedSubviews={false}
         style={{ paddingTop: 24 }}
         enableEmptySections
         rightOpenValue={-75}

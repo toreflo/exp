@@ -95,6 +95,7 @@ class UsersScreen extends Component {
   render() {
     const content = (
       <List
+        removeClippedSubviews={false}
         style={{ paddingTop: 24 }}
         leftOpenValue={75}
         rightOpenValue={-75}
