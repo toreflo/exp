@@ -4,21 +4,34 @@ import {
   Text,
   StyleSheet
 } from "react-native";
+import { connect } from 'react-redux';
 
 class UserDetailsScreen extends Component {
   render() {
-    const { name, surname, email } = this.props.navigation.getParam('user');
+    const { name, surname, email, groups } = this.props.navigation.getParam('user');
+    const groupList = Object.keys(groups).map((groupKey) => (
+      <Text key={groupKey}>
+        {this.props.groups.find(g => g.key === groupKey).name}
+      </Text>
+    ));
 
     return (
       <View style={styles.container}>
         <Text>{name}</Text>
         <Text>{surname}</Text>
         <Text>{email}</Text>
+        <Text>Gruppi:</Text>
+        {groupList}
       </View>
     );
   }
 }
-export default UserDetailsScreen;
+
+const mapStateToProps = (state) => ({
+  groups: state.groups,
+});
+
+export default connect(mapStateToProps)(UserDetailsScreen);
 
 const styles = StyleSheet.create({
   container: {

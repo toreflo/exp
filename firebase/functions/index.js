@@ -48,7 +48,20 @@ const deleteUser = (req, res) => {
       }
       return admin.auth().deleteUser(uid);
     })
-    .then((userRecord) => admin.database().ref(`/users/${uid}`).set(null))
+    .then(() => admin.database().ref(`/users/${uid}`).once('value'))
+    .then((userSnapshot) => {
+      const { groups } = userSnapshot.val();
+      let updates = {
+        [`/users/${uid}`]: null,
+      };
+      if (groups) {
+        Object.keys(groups).forEach(groupKey => {
+          updates[`/groups/${groupKey}/users/${uid}`] = null;
+        });
+      }
+      return admin.database().ref().update(updates);
+    })
+    // .then(() => admin.database().ref(`/users/${uid}`).set(null))
     .then(() => res.send({
       message: `Eliminato utente ${uid}!`
     }))
