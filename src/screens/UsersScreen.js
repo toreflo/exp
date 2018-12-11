@@ -147,17 +147,3 @@ const mapStateToProps = (state) => ({
 });
 
 export default connect(mapStateToProps)(UsersScreen);
-
-const styles = StyleSheet.create({
-  addUser: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-});

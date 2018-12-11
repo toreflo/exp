@@ -21,7 +21,7 @@ class MessageDetailsScreen extends Component {
     this.hideConfirmDialog = this.hideConfirmDialog.bind(this);
 }
   componentDidMount() {
-    const { title } = this.props.navigation.getParam('message').val();
+    const { title } = this.props.navigation.getParam('message');
     let headerTitle = [<Text key={1}>{title}</Text>];
     this.props.navigation.setParams({ title: headerTitle});
     this.props.navigation.setParams({
@@ -57,8 +57,7 @@ class MessageDetailsScreen extends Component {
   }
   
   editMessage() {
-    const { title, body, creationTime, pinned } = this.props.navigation.getParam('message').val();
-    const { key } = this.props.navigation.getParam('message');
+    const { key, title, body, creationTime, pinned } = this.props.navigation.getParam('message');
     this.props.navigation.navigate('WriteMessageScreen', {
       editInfo: {
         key,
@@ -71,7 +70,7 @@ class MessageDetailsScreen extends Component {
   }
 
   render() {
-    const { body, timestamp } = this.props.navigation.getParam('message').val();
+    const { body, timestamp } = this.props.navigation.getParam('message');
 
     return (
       <Container style={{ backgroundColor: gbl.backgroundColor }}>

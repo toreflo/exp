@@ -1,5 +1,5 @@
-import React, { Component } from "react";
-import { View, StyleSheet, ListView } from "react-native";
+import React, { Component } from 'react';
+import { View, StyleSheet, ListView } from 'react-native';
 import { 
   Container,
   Content,
@@ -13,75 +13,28 @@ import {
   Button,
   Left,
   Right,
-} from "native-base";
+} from 'native-base';
 import 'moment/locale/it';
 import firebase from 'firebase';
-import Dialog from "react-native-dialog";
+import Dialog from 'react-native-dialog';
+import { connect } from 'react-redux';
 
 import * as gbl from '../gbl';
 
-class ChatGroupsScreen extends Component {
+class GroupsScreen extends Component {
   constructor(props) {
     super(props);
     this.ds = new ListView.DataSource({ rowHasChanged: (r1, r2) => r1 !== r2 });
-    this.state = {
-      messages: [],
-      groups: [],
-      loading: true,
-    };
-    this.db = firebase.database();
+    this.state = {};
     this.goToDetails = this.goToDetails.bind(this);
-    this.childAdded = this.childAdded.bind(this);
-    this.childRemoved = this.childRemoved.bind(this);
-    this.childChanged = this.childChanged.bind(this);
-    this.sortGroups = this.sortGroups.bind(this);
     this.createGroup = this.createGroup.bind(this);
     this.showGroupDialog = this.showGroupDialog.bind(this);
     this.hideGroupDialog = this.hideGroupDialog.bind(this);
   }
 
-  componentDidMount() {
-    this.db.ref('/groups/').on('child_added', this.childAdded);
-    this.db.ref('/groups/').on('child_removed', this.childRemoved);
-    this.db.ref('/groups/').on('child_changed', this.childChanged);
-    this.db.ref('/dummy').once('value', (snapshot) => {
-      if (this.state.loading) this.setState({loading: false});
-    });
-  }
-
-  componentWillUnmount() {
-    this.db.ref('/groups/').off('child_added');
-    this.db.ref('/groups/').off('child_removed');
-    this.db.ref('/groups/').off('child_changed');
-  }
-
-  childAdded(snapshot) {
-    const newData = [...this.state.groups];
-    newData.push(snapshot);
-    this.setState({groups: newData.sort(this.sortGroups)});
-  }
-
-  childChanged(snapshot) {
-    const newData = [...this.state.groups];
-    const idx = newData.findIndex(item => item.key === snapshot.key);
-    if (idx !== -1) {
-      newData[idx] = snapshot;
-      this.setState({ groups: newData.sort(this.sortGroups) });
-    }
-  }
-  
-  childRemoved(snapshot) {
-    const idx = this.state.groups.findIndex(groups => groups.key === snapshot.key);
-    if (idx === -1) return;
-
-    const newData = [...this.state.groups];
-    newData.splice(idx, 1);
-    this.setState({ groups: newData.sort(this.sortGroups) });
-  }
-
   createGroup() {
-    const { key } = this.db.ref('/groups/').push();
-    this.db.ref('/groups/' + key).set({
+    const { key } = firebase.database().ref('/groups/').push();
+    firebase.database().ref('/groups/' + key).set({
       name: this.state.newGroupName,
     })
       .then(() => this.hideGroupDialog())
@@ -92,7 +45,7 @@ class ChatGroupsScreen extends Component {
   }
 
   sortGroups(a, b) {
-    return (b.val().name < a.val().name);
+    return (b.name < a.name);
   }
 
   goToDetails(group) {
@@ -119,7 +72,8 @@ class ChatGroupsScreen extends Component {
         <ListView
           style={{ padding: 15, paddingBottom: 75 }}
           enableEmptySections
-          dataSource={this.ds.cloneWithRows(this.state.groups)}
+          // dataSource={this.ds.cloneWithRows(this.state.groups)}
+          dataSource={this.ds.cloneWithRows(this.props.groups.sort(this.sortGroups))}
           renderRow={(data) => {
             return (
               <Card style={{ borderRadius: 10, overflow: 'hidden' }}>
@@ -128,14 +82,17 @@ class ChatGroupsScreen extends Component {
                   onPress={ () => this.goToDetails(data) }
                 >
                   <Body>
-                    <Text> {data.val().name} </Text>
+                    <Text> {data.name} </Text>
                   </Body>
                 </CardItem>
                 <CardItem style={{justifyContent: 'flex-end'}}>
                   <Right>
                     <Button
                       transparent
-                      onPress={() => this.props.navigation.navigate('GroupDetailsScreen', { group: data })}
+                      onPress={() => this.props.navigation.navigate(
+                        'GroupDetailsScreen',
+                        { group: data },
+                      )}
                     >
                       <Icon type="Ionicons" name="md-cog" style={{fontSize: 20}}/>
                     </Button>
@@ -183,13 +140,9 @@ class ChatGroupsScreen extends Component {
     );
   }
 }
-export default ChatGroupsScreen;
 
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center'
-  }
+const mapStateToProps = (state) => ({
+  groups: state.groups,
 });
+
+export default connect(mapStateToProps)(GroupsScreen);

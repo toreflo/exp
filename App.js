@@ -10,7 +10,8 @@ import { HomeNavigator, WelcomeNavigator, pippo } from './src/navigators';
 import config from './config';
 import * as gbl from './src/gbl';
 import rootReducer from './src/reducers';
-import { addUser, delUser, logout } from './src/actions';
+import * as actions from './src/actions';
+import * as firebaseDB from './src/lib/firebaseDB';
 
 const store = createStore(rootReducer);
 
@@ -44,27 +45,45 @@ export default class App extends React.Component {
         /* let currentValue;
         this.unsubscribe = store.subscribe(() => {
           let previousValue = currentValue;
-          currentValue = store.getState().users;
+          currentValue = store.getState().boardMessages;
 
           if (previousValue !== currentValue) {
-            console.log('>>>', currentValue.map(user => ({key: user.key, name: user.name})));
+            console.log('>>>', currentValue.map(data => ({key: data.key, title: data.title})));
           }
         }); */
         newState.dbSubscription = true;
-        firebase.database().ref('/users/').on('child_added', (snapshot) => {
-          store.dispatch(addUser({
-            key: snapshot.key,
-            ...snapshot.val(),
-          }))
+
+        firebaseDB.on('/users/', 'child_added', (snapshot) => {
+          store.dispatch(actions.userAdded({key: snapshot.key, ...snapshot.val()}))
         });
-        firebase.database().ref('/users/').on('child_removed', (snapshot) => {
-          store.dispatch(delUser(snapshot.key));
+        firebaseDB.on('/users/', 'child_changed', (snapshot) => {
+          store.dispatch(actions.userChanged({key: snapshot.key, ...snapshot.val()}));
+        });
+        firebaseDB.on('/users/', 'child_removed', (snapshot) => {
+          store.dispatch(actions.userRemoved(snapshot.key));
+        });
+        firebaseDB.on('/groups/', 'child_added', (snapshot) => {
+          store.dispatch(actions.groupAdded({key: snapshot.key, ...snapshot.val()}))
+        });
+        firebaseDB.on('/groups/', 'child_changed', (snapshot) => {
+          store.dispatch(actions.groupChanged({key: snapshot.key, ...snapshot.val()}));
+        });
+        firebaseDB.on('/groups/', 'child_removed', (snapshot) => {
+          store.dispatch(actions.groupRemoved(snapshot.key));
+        });
+        firebaseDB.on('/messages/board/', 'child_added', (snapshot) => {
+          store.dispatch(actions.boardMessageAdded({key: snapshot.key, ...snapshot.val()}))
+        });
+        firebaseDB.on('/messages/board/', 'child_changed', (snapshot) => {
+          store.dispatch(actions.boardMessageChanged({key: snapshot.key, ...snapshot.val()}));
+        });
+        firebaseDB.on('/messages/board/', 'child_removed', (snapshot) => {
+          store.dispatch(actions.boardMessageRemoved(snapshot.key));
         });
       } else if (this.state.dbSubscription) {
         store.dispatch(logout());
         newState.dbSubscription = false;
-        firebase.database().ref('/users/').off('child_added');
-        firebase.database().ref('/users/').off('child_removed');
+        firebaseDB.unregisterAll();
         // this.unsubscribe();
       }
       this.setState(newState);
