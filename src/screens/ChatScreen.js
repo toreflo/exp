@@ -104,6 +104,7 @@ class ChatScreen extends Component {
               Inserisci messaggio:
             </Dialog.Description>
             <Dialog.Input 
+              autoFocus={this.state.showNewMessage}
               onChangeText={(newMessage) => this.setState({ newMessage })}
               value={this.state.newMessage}
             />

@@ -129,6 +129,7 @@ class GroupsScreen extends Component {
               Scegli il nome del nuovo gruppo da creare:
             </Dialog.Description>
             <Dialog.Input 
+              autoFocus={this.state.showAddGroup}
               onChangeText={(newGroupName) => this.setState({ newGroupName })}
               value={this.state.newGroupName}
             />
