@@ -22,19 +22,22 @@ class MessageDetailsScreen extends Component {
 }
   componentDidMount() {
     const { title } = this.props.navigation.getParam('message');
+    const admin = this.props.navigation.getParam('admin');
     let headerTitle = [<Text key={1}>{title}</Text>];
     this.props.navigation.setParams({ title: headerTitle});
-    this.props.navigation.setParams({
-      rightButtons: [{
-        key: 1,
-        callback: this.editMessage,
-        icon: <Icon type="FontAwesome" name="pencil" />,
-      }, {
-        key: 2,
-        callback: this.showConfirmDialog,
-        icon: <Icon type="Ionicons" name="ios-trash" />,
-      }],
-    });
+    if (admin) {
+      this.props.navigation.setParams({
+        rightButtons: [{
+          key: 1,
+          callback: this.editMessage,
+          icon: <Icon type="FontAwesome" name="pencil" />,
+        }, {
+          key: 2,
+          callback: this.showConfirmDialog,
+          icon: <Icon type="Ionicons" name="ios-trash" />,
+        }],
+      });
+    }
   }
 
   showConfirmDialog() {

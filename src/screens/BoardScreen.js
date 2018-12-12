@@ -50,12 +50,24 @@ class BoardScreen extends Component {
   goToDetails(message) {
     this.props.navigation.navigate(
       'MessageDetailsScreen',
-      { message },
+      { message, admin: this.props.admin },
     );
   }
 
   render() {
     const MAX_LEN = 100;
+    const fab = this.props.admin ? (
+      <Fab
+        active={true}
+        direction="up"
+        containerStyle={{ }}
+        style={{ backgroundColor: '#5067FF' }}
+        position="bottomRight"
+        onPress={() => this.props.navigation.navigate('WriteMessageScreen')}>
+        <Icon type="FontAwesome" name="pencil" />
+      </Fab>
+    ) : null;
+
     const content = (
       <Content>
         <ListView
@@ -72,7 +84,9 @@ class BoardScreen extends Component {
                 transparent
                 warning={data.pinned}
                 light={!data.pinned}
-                onPress={() => this.togglePinned(data)}
+                onPress={() => {
+                  if (this.props.admin) this.togglePinned(data);
+                }}
               >
                 <Icon type="Ionicons" name="ios-star" style={{fontSize: 20}}/>
               </Button>
@@ -110,21 +124,14 @@ class BoardScreen extends Component {
       <Container style={{ backgroundColor: gbl.backgroundColor }}>
         <View style={{ flex: 1 }}>
           {content}
-          <Fab
-            active={true}
-            direction="up"
-            containerStyle={{ }}
-            style={{ backgroundColor: '#5067FF' }}
-            position="bottomRight"
-            onPress={() => this.props.navigation.navigate('WriteMessageScreen')}>
-            <Icon type="FontAwesome" name="pencil" />
-          </Fab>
+          {fab}
         </View>
       </Container>
     );
   }
 }
 const mapStateToProps = (state) => ({
+  admin: state.info.admin,
   messages: state.boardMessages,
 });
 

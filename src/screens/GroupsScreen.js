@@ -51,7 +51,7 @@ class GroupsScreen extends Component {
   goToDetails(group) {
     this.props.navigation.navigate(
       'ChatScreen',
-      { group },
+      { group, admin: this.props.admin },
     );
   }
 
@@ -64,10 +64,7 @@ class GroupsScreen extends Component {
   }
 
   render() {
-    const MAX_LEN = 100;
-    let content;
-    const spinner = (<Spinner />);
-    const list = (
+    const content = (
       <Content>
         <ListView
           style={{ padding: 15, paddingBottom: 75 }}
@@ -105,22 +102,23 @@ class GroupsScreen extends Component {
       </Content>
     );
 
-    if (this.state.loading) content = spinner;
-    else content = list;
+    const fab = this.props.admin ? (
+      <Fab
+        active={true}
+        direction="up"
+        containerStyle={{ }}
+        style={{ backgroundColor: '#5067FF' }}
+        position="bottomRight"
+        onPress={this.showGroupDialog}>
+        <Icon type="Ionicons" name="ios-add" />
+      </Fab>
+    ) : null;
 
     return (
       <Container  style={{ backgroundColor: gbl.backgroundColor }}>
         <View style={{ flex: 1 }}>
           {content}
-          <Fab
-            active={true}
-            direction="up"
-            containerStyle={{ }}
-            style={{ backgroundColor: '#5067FF' }}
-            position="bottomRight"
-            onPress={this.showGroupDialog}>
-            <Icon type="Ionicons" name="ios-add" />
-          </Fab>
+          {fab}
         </View>
         <View>
           <Dialog.Container visible={this.state.showAddGroup}>
@@ -143,6 +141,7 @@ class GroupsScreen extends Component {
 }
 
 const mapStateToProps = (state) => ({
+  admin: state.info.admin,
   groups: state.groups,
 });
 

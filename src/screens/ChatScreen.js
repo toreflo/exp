@@ -55,7 +55,19 @@ class ChatScreen extends Component {
   }
 
   render() {
+    const admin = this.props.navigation.getParam('admin');
     const messages = this.props.messages ? this.props.messages : [];
+    const fab = admin ? (
+      <Fab
+        active={true}
+        direction="up"
+        containerStyle={{ }}
+        style={{ backgroundColor: '#5067FF' }}
+        position="bottomRight"
+        onPress={this.showNewMessageDialog}>
+        <Icon type="FontAwesome" name="pencil" />
+      </Fab>
+    ) : null;
     const content = (
       <Content>
         <ListView
@@ -87,15 +99,7 @@ class ChatScreen extends Component {
       <Container style={{ backgroundColor: gbl.backgroundColor }}>
         <View style={{ flex: 1 }}>
           {content}
-          <Fab
-            active={true}
-            direction="up"
-            containerStyle={{ }}
-            style={{ backgroundColor: '#5067FF' }}
-            position="bottomRight"
-            onPress={this.showNewMessageDialog}>
-            <Icon type="FontAwesome" name="pencil" />
-          </Fab>
+          {fab}
         </View>
         <View>
           <Dialog.Container visible={this.state.showNewMessage}>
