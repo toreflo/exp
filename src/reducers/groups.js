@@ -19,7 +19,7 @@ const groups = (state = [], action) => {
       return [...state, group(undefined, action)];
     case types.GROUP_CHANGED:
       idx = state.findIndex(group => group.key === action.group.key);
-      if (idx === -1) return state;
+      if (idx === -1) return [...state, group(undefined, action)];
       return [...state.slice(0, idx), group(undefined, action), ...state.slice(idx + 1)];
     case types.GROUP_REMOVED:
       idx = state.findIndex(group => group.key === action.groupKey);

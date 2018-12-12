@@ -63,28 +63,35 @@ class GroupDetailsScreen extends Component {
     this.setState({showConfirm: false}) 
     const { key: groupKey } = this.props.navigation.getParam('group');
 
-    const updates = this.state.users.reduce((userUpdates, user) => ({
+    const updates = this.getGroupUsers().reduce((userUpdates, user) => ({
       ...userUpdates,
       [`/users/${user.key}/groups/${groupKey}`]: null,
     }), {});
 
     updates[`/groups/${groupKey}`] = null;
+    updates[`/messages/${groupKey}`] = null;
     this.db.ref().update(updates)
       .then(() => this.props.navigation.navigate('GroupsScreen'))
       .catch((error) => alert(`${error.name}: ${error.message}`));
   }
 
-  render() {
+  getGroupUsers() {
     const { key: groupKey } = this.props.navigation.getParam('group');
-    let users = [];
     const group = this.props.groups.find(item => item.key === groupKey);
     if (group && group.users) {
-      users = Object.keys(group.users).map(userKey => {
+      return Object.keys(group.users).map(userKey => {
         return ({
           ...this.props.users.find(user => user.key === userKey),
         });
       });
     }
+    return [];
+  }
+
+  render() {
+    const { key: groupKey } = this.props.navigation.getParam('group');
+    const group = this.props.groups.find(item => item.key === groupKey);
+    const users = this.getGroupUsers();
     const content = (
       <List
         removeClippedSubviews={false}

@@ -45,7 +45,30 @@ export const boardMessageRemoved = (boardMessageKey) => ({
   boardMessageKey,
 });
 
+export const groupMessageAdded = (groupMessage) => ({
+  type: types.GROUP_MESSAGE_ADDED,
+  groupKey: groupMessage.groupKey,
+  message: groupMessage.message,
+});
+
+export const groupMessageChanged = (groupMessage) => ({
+  type: types.GROUP_MESSAGE_CHANGED,
+  groupKey: groupMessage.groupKey,
+  message: groupMessage.message,
+});
+
+export const groupMessageRemoved = (groupMessage) => {console.log('>>>>>>>>>', groupMessage); return({
+  type: types.GROUP_MESSAGE_REMOVED,
+  groupKey: groupMessage.groupKey,
+  messageKey: groupMessage.messageKey,
+});};
+
 
 export const logout = () => ({
   type: types.LOGOUT,
+});
+
+export const login = (admin) => ({
+  type: types.LOGIN,
+  admin,
 });
