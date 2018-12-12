@@ -31,6 +31,7 @@ const messages = (state = [], action) => {
 };
 
 const groupMessages = (state = {}, action) => {
+  let newState;
   switch (action.type) {
     case types.LOGOUT:
       return {};
@@ -38,6 +39,12 @@ const groupMessages = (state = {}, action) => {
     case types.GROUP_MESSAGE_CHANGED:
     case types.GROUP_MESSAGE_REMOVED:
       return {...state, [action.groupKey]: messages(state[action.groupKey], action)};
+    case types.GROUP_UNSUBSCRIBED:
+      if (!state[action.groupKey]) return state;
+      
+      newState = {...state};
+      delete newState[action.groupKey];
+      return newState;
     default:
       return state
   }

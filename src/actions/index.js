@@ -57,11 +57,16 @@ export const groupMessageChanged = (groupMessage) => ({
   message: groupMessage.message,
 });
 
-export const groupMessageRemoved = (groupMessage) => {console.log('>>>>>>>>>', groupMessage); return({
+export const groupMessageRemoved = (groupMessage) => ({
   type: types.GROUP_MESSAGE_REMOVED,
   groupKey: groupMessage.groupKey,
   messageKey: groupMessage.messageKey,
-});};
+});
+
+export const groupMessageUnsubscribed = (groupKey) => ({
+  type: types.GROUP_UNSUBSCRIBED,
+  groupKey,
+});
 
 
 export const logout = () => ({

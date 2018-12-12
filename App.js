@@ -51,14 +51,20 @@ export default class App extends React.Component {
         })
         newState.dbSubscription = true;
 
-        if (true) {
-          let currentValue;
+        if (false) {
+          let currentGroups;
+          let currentGroupMessages;
           this.unsubscribe = store.subscribe(() => {
-            let previousValue = currentValue;
-            currentValue = store.getState().groupMessages;
+            let previousGroups = currentGroups;
+            currentGroups = store.getState().groups;
+            let previousGroupMessages = currentGroupMessages;
+            currentGroupMessages = store.getState().groupMessages;
   
-            if (previousValue !== currentValue) {
-              console.log('App store subscription >>>', currentValue);
+            if (previousGroups !== currentGroups) {
+              console.log('############### App store subscription group', currentGroups);
+            }
+            if (previousGroupMessages !== currentGroupMessages) {
+              console.log('############### App store subscription groupMessages', currentGroupMessages);
             }
           });
         }
@@ -130,53 +136,82 @@ export default class App extends React.Component {
       store.dispatch(actions.boardMessageRemoved(snapshot.key));
     });    
 
-    if (true) {
-      /* Groups and group messages */
-      firebaseDB.once(`/users/${uid}`, 'value', (snapshot) => {
-        const { groups } = snapshot.val();
-        if (groups) {
-          Object.keys(groups).forEach((groupKey) => {
-            /* Group */
-            firebaseDB.on(`/groups/${groupKey}/`, 'value', (snapshot) => {
-              if (snapshot.val()) {
-                store.dispatch(actions.groupChanged({key: snapshot.key, ...snapshot.val()}))
-              } else {
-                store.dispatch(actions.groupRemoved(snapshot.key));
-              }
-            });
-                    
-            /* Group messages */
-            firebaseDB.on(`/messages/groups/${groupKey}/`, 'child_added', (snapshot) => {
-              store.dispatch(actions.groupMessageAdded({
-                groupKey, 
-                message: {
-                  key: snapshot.key,
-                  ...snapshot.val(),
-                },
-              }))
-            });
-            firebaseDB.on(`/messages/groups/${groupKey}/`, 'child_changed', (snapshot) => {
-              store.dispatch(actions.groupMessageChanged({
-                groupKey, 
-                message: {
-                  key: snapshot.key,
-                  ...snapshot.val(),
-                },
-              }))
-            });
-            firebaseDB.on(`/messages/groups/${groupKey}/`, 'child_removed', (snapshot) => {
-              console.log('Removed', snapshot.key)
-              store.dispatch(actions.groupMessageRemoved({
-                groupKey, 
-                messageKey: snapshot.key,
-              }))
-            });
+    let groups = {};
+    let prevGroups;
+
+    /* Groups and group messages */
+    firebaseDB.on(`/users/${uid}`, 'value', (snapshot) => {
+      prevGroups = groups;
+      ({ groups } = snapshot.val());
+      if (!groups) groups = {};
+      const groupsAdded = Object.keys(groups).filter(key => prevGroups[key] === undefined);
+      const groupsRemoved = Object.keys(prevGroups).filter(key => groups[key] === undefined);
+
+      if (groupsAdded.length > 0) {
+        groupsAdded.forEach((groupKey) => {
+          this.subscripeGroup(groupKey);
+        });
+      } else if (groupsRemoved.length > 0) {
+          groupsRemoved.forEach((groupKey) => {
+            this.unsubscripeGroup(groupKey);
           });
-        }
-      });
-    }
+      }
+    });
   }  
   
+  subscripeGroup(groupKey) {
+    // console.log('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Subscribing to group', groupKey)
+
+    /* Group */
+    firebaseDB.on(`/groups/${groupKey}/`, 'value', (snapshot) => {
+      // console.log(`value  ===>  /groups/${groupKey}/`, snapshot.key)
+      if (snapshot.val()) {
+        store.dispatch(actions.groupChanged({key: snapshot.key, ...snapshot.val()}))
+      } else {
+        store.dispatch(actions.groupRemoved(snapshot.key));
+      }
+    });
+            
+    /* Group messages */
+    firebaseDB.on(`/messages/groups/${groupKey}/`, 'child_added', (snapshot) => {
+      // console.log(`child_added  ===>  /messages/groups/${groupKey}/`, snapshot.key)
+      store.dispatch(actions.groupMessageAdded({
+        groupKey, 
+        message: {
+          key: snapshot.key,
+          ...snapshot.val(),
+        },
+      }))
+    });
+    firebaseDB.on(`/messages/groups/${groupKey}/`, 'child_changed', (snapshot) => {
+      // console.log(`child_changed  ===>  /messages/groups/${groupKey}/`, snapshot.key)
+      store.dispatch(actions.groupMessageChanged({
+        groupKey, 
+        message: {
+          key: snapshot.key,
+          ...snapshot.val(),
+        },
+      }));
+    });
+    firebaseDB.on(`/messages/groups/${groupKey}/`, 'child_removed', (snapshot) => {
+      // console.log(`child_changed  ===>  /messages/groups/${groupKey}/`, snapshot.key)
+      store.dispatch(actions.groupMessageRemoved({
+        groupKey, 
+        messageKey: snapshot.key,
+      }));
+    });
+  }
+  
+  unsubscripeGroup(groupKey) {
+    // console.log('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Unsubscribing from group', groupKey)
+    firebaseDB.unregister(`/groups/${groupKey}/`, 'value');
+    firebaseDB.unregister(`/messages/groups/${groupKey}/`, 'child_added');
+    firebaseDB.unregister(`/messages/groups/${groupKey}/`, 'child_changed');
+    firebaseDB.unregister(`/messages/groups/${groupKey}/`, 'child_removed');
+    store.dispatch(actions.groupRemoved(groupKey));
+    store.dispatch(actions.groupMessageUnsubscribed(groupKey));
+  }
+
   render() {
     let app;
     if (this.state.loading) {
