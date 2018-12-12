@@ -37,20 +37,18 @@ export default class App extends React.Component {
    */
   componentDidMount() {
     this.authRemoveSubscription = firebase.auth().onAuthStateChanged((user) => {
-      const newState = {
-        loading: false,
-        user,
-      };
       if (user) {
         firebaseDB.once(`/admins/${user.uid}`, 'value', (snapshot) => {
+          const newState = {loading: false, user, dbSubscription: true};
           if (snapshot.val() && snapshot.val().admin) {
             this.subscribeAdmin();
+            newState.admin = true;
           } else {
             this.subscribeUser(user.uid);            
+            newState.admin = false;
           }
+          this.setState(newState);
         })
-        newState.dbSubscription = true;
-
         if (DEBUG_STORE) {
           let currentGroups;
           let currentGroupMessages;
@@ -70,11 +68,12 @@ export default class App extends React.Component {
         }
       } else if (this.state.dbSubscription) {
         store.dispatch(actions.logout());
-        newState.dbSubscription = false;
         firebaseDB.unregisterAll();
+        this.setState({loading: false, user, dbSubscription: false});
         if (DEBUG_STORE) this.unsubscribe();
+      } else {
+        this.setState({loading: false, user})
       }
-      this.setState(newState);
     });
   }
 
@@ -230,7 +229,7 @@ export default class App extends React.Component {
         </View>
       );
     } else if (this.state.user) {
-      app = <HomeNavigator />;
+      app = <HomeNavigator admin={this.state.admin} />;
     } else app = <WelcomeNavigator />;
 
     return (

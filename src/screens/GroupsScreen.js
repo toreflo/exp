@@ -64,6 +64,26 @@ class GroupsScreen extends Component {
   }
 
   render() {
+    const getAdminSection = (data) => {
+      if (this.props.admin) {
+        return (
+          <CardItem style={{justifyContent: 'flex-end'}}>
+            <Right>
+              <Button
+                transparent
+                onPress={() => this.props.navigation.navigate(
+                  'GroupDetailsScreen',
+                  { group: data },
+                )}
+              >
+                <Icon type="Ionicons" name="md-cog" style={{fontSize: 20}}/>
+              </Button>
+            </Right>
+          </CardItem>
+        );
+      }
+      return null;
+    } 
     const content = (
       <Content>
         <ListView
@@ -82,19 +102,7 @@ class GroupsScreen extends Component {
                     <Text> {data.name} </Text>
                   </Body>
                 </CardItem>
-                <CardItem style={{justifyContent: 'flex-end'}}>
-                  <Right>
-                    <Button
-                      transparent
-                      onPress={() => this.props.navigation.navigate(
-                        'GroupDetailsScreen',
-                        { group: data },
-                      )}
-                    >
-                      <Icon type="Ionicons" name="md-cog" style={{fontSize: 20}}/>
-                    </Button>
-                  </Right>
-                </CardItem>
+                {getAdminSection(data)}
               </Card>
             );
           }}

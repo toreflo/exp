@@ -9,51 +9,66 @@ import UsersNavigator from './UsersNavigator';
 import GroupsNavigator from './GroupsNavigator';
 import MeScreen from '../screens/MeScreen';
 
-const HomeTabNavigator = createBottomTabNavigator({
-  BoardNavigator: { screen: BoardNavigator },
-  GroupsNavigator: { screen: GroupsNavigator },
-  UsersNavigator: { screen: UsersNavigator },
-  MeScreen: { screen: MeScreen },
-}, {
-  tabBarComponent: ({ navigation }) => {
-    return (
-      <StyleProvider style={getTheme(exp)}>
-        <Footer>
-          <FooterTab>
-            <Button
-              vertical
-              active={navigation.state.index === 0}
-              onPress={() => navigation.navigate('BoardNavigator')}
-            >
-              <Icon type="FontAwesome" name="home" />
-            </Button>
-            <Button
-              vertical
-              active={navigation.state.index === 1}
-              onPress={() => navigation.navigate('GroupsNavigator')}
-            >
-              <Icon type="FontAwesome" name="envelope" />
-            </Button>
-            <Button
-              vertical
-              active={navigation.state.index === 2}
-              onPress={() => navigation.navigate('UsersNavigator')}
-            >
-              <Icon type="FontAwesome" name="group" />
-            </Button>
-            <Button
-              vertical
-              active={navigation.state.index === 3}
-              onPress={() => navigation.navigate('MeScreen')}
-            >
-              <Icon type="FontAwesome" name="user" />
-              {/* <Text>Me</Text> */}
-            </Button>
-          </FooterTab>
-        </Footer>
-      </StyleProvider>      
-    );
+class HomeTabNavigator extends React.Component {
+  render() {
+    let index = 0;
+    const screens = {
+      BoardNavigator: {
+        component: BoardNavigator,
+        index: index++,
+        icon: <Icon type="FontAwesome" name="home" />,
+      },
+      GroupsNavigator: {
+        component: GroupsNavigator,
+        index: index++,
+        icon: <Icon type="FontAwesome" name="envelope" />,
+      },
+    };
+    if (this.props.admin) {
+      screens.UsersNavigator = {
+        component: UsersNavigator,
+        index: index++,
+        icon: <Icon type="FontAwesome" name="group" />,
+      };
+    }
+    screens.MeScreen = {
+      component: MeScreen,
+      index: index++,
+      icon: <Icon type="FontAwesome" name="user" />,
+    };
+    const routes = Object.entries(screens).reduce((params, entry) => {
+      const [screen, item] = entry;
+      return ({
+        ...params,
+        [screen]: {screen: item.component},
+      });
+    }, {});
+  
+    const tabBarComponent = ({ navigation }) => {
+      const tabs = Object.entries(screens).map(([screen, item]) => (
+        <Button
+          key={item.index}
+          vertical
+          active={navigation.state.index === item.index}
+          onPress={() => navigation.navigate(screen)}
+        >
+          {item.icon}
+        </Button>
+      ));
+
+      return (
+        <StyleProvider style={getTheme(exp)}>
+          <Footer>
+            <FooterTab>
+              {tabs}
+            </FooterTab>
+          </Footer>
+        </StyleProvider>      
+      );
+    }
+    const nav = createBottomTabNavigator(routes, { tabBarComponent });
+    return React.createElement(nav, {});
   }
-});
+}
 
 export default HomeTabNavigator;
