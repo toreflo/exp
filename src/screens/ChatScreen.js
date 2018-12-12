@@ -32,28 +32,24 @@ class ChatScreen extends Component {
 
   render() {
     const messages = this.props.messages ? this.props.messages : [];
-    const MAX_LEN = 100;
     const content = (
       <Content>
         <ListView
+          removeClippedSubviews={false}
           enableEmptySections
           style={{ padding: 15, paddingBottom: 75 }}
-          dataSource={this.ds.cloneWithRows(this.props.messages)}
+          dataSource={this.ds.cloneWithRows(messages)}
           renderRow={(data) => {
-            const body = data.body.length > MAX_LEN ?
-              data.body.substring(0, MAX_LEN) + '...' :
-              data.body; 
-  
             return (
               <Card style={{ borderRadius: 10, overflow: 'hidden' }}>
                 <CardItem>
                   <Body>
-                    <Text> {body} </Text>
+                    <Text> {data.body} </Text>
                   </Body>
                 </CardItem>
                 <CardItem style={{justifyContent: 'flex-end'}}>
                   <Text style={{fontSize: 10}}>
-                    {moment.unix(data.creationTime/1000).format('LLL')} 
+                    {/* {moment.unix(data.creationTime/1000).format('LLL')}  */}
                   </Text>
                 </CardItem>
               </Card>

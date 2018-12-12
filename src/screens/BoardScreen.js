@@ -59,6 +59,7 @@ class BoardScreen extends Component {
     const content = (
       <Content>
         <ListView
+          removeClippedSubviews={false}
           enableEmptySections
           style={{ padding: 15, paddingBottom: 75 }}
           dataSource={this.ds.cloneWithRows(this.props.messages.sort(this.sortMessages))}
