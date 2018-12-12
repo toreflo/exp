@@ -69,7 +69,7 @@ class GroupDetailsScreen extends Component {
     }), {});
 
     updates[`/groups/${groupKey}`] = null;
-    updates[`/messages/${groupKey}`] = null;
+    updates[`/messages/groups/${groupKey}`] = null;
     this.db.ref().update(updates)
       .then(() => this.props.navigation.navigate('GroupsScreen'))
       .catch((error) => alert(`${error.name}: ${error.message}`));

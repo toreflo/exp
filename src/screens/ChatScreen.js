@@ -19,6 +19,7 @@ import moment from 'moment';
 import 'moment/locale/it';
 import firebase from 'firebase';
 import { connect } from 'react-redux';
+import Dialog from 'react-native-dialog';
 
 import * as gbl from '../gbl';
 
@@ -27,7 +28,30 @@ class ChatScreen extends Component {
     super(props);
     this.ds = new ListView.DataSource({ rowHasChanged: (r1, r2) => r1 !== r2 });
     this.state = {};
-    this.db = firebase.database();
+    this.showNewMessageDialog = this.showNewMessageDialog.bind(this);
+    this.hideNewMessageDialog = this.hideNewMessageDialog.bind(this);
+    this.sendMessage = this.sendMessage.bind(this);
+  }
+
+  sendMessage() {
+    const { key: groupKey } = this.props.navigation.getParam('group');
+    const { key } = firebase.database().ref(`/messages/groups/${groupKey}`).push();
+    firebase.database().ref(`/messages/groups/${groupKey}/${key}`).set({
+      body: this.state.newMessage,
+    })
+      .then(() => this.hideNewMessageDialog())
+      .catch((error) => {
+        this.hideNewMessageDialog();
+        alert(`${error.name}: ${error.message}`);
+      });
+  }
+
+  showNewMessageDialog() {
+    this.setState({showNewMessage: true});
+  }
+
+  hideNewMessageDialog() {
+    this.setState({showNewMessage: false, newMessage: ''}) 
   }
 
   render() {
@@ -69,9 +93,23 @@ class ChatScreen extends Component {
             containerStyle={{ }}
             style={{ backgroundColor: '#5067FF' }}
             position="bottomRight"
-            onPress={() => this.props.navigation.navigate('xxx')}>
+            onPress={this.showNewMessageDialog}>
             <Icon type="FontAwesome" name="pencil" />
           </Fab>
+        </View>
+        <View>
+          <Dialog.Container visible={this.state.showNewMessage}>
+            <Dialog.Title>Nuovo messaggio</Dialog.Title>
+            <Dialog.Description>
+              Inserisci messaggio:
+            </Dialog.Description>
+            <Dialog.Input 
+              onChangeText={(newMessage) => this.setState({ newMessage })}
+              value={this.state.newMessage}
+            />
+            <Dialog.Button label="Annulla" onPress={this.hideNewMessageDialog}/>
+            <Dialog.Button label="Conferma" onPress={ this.sendMessage }/>
+          </Dialog.Container>
         </View>
       </Container>
     );

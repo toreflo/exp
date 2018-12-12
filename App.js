@@ -14,7 +14,7 @@ import * as actions from './src/actions';
 import * as firebaseDB from './src/lib/firebaseDB';
 
 const store = createStore(rootReducer);
-
+const DEBUG_STORE = false;
 export default class App extends React.Component {
   constructor() {
     super();
@@ -51,7 +51,7 @@ export default class App extends React.Component {
         })
         newState.dbSubscription = true;
 
-        if (false) {
+        if (DEBUG_STORE) {
           let currentGroups;
           let currentGroupMessages;
           this.unsubscribe = store.subscribe(() => {
@@ -61,10 +61,10 @@ export default class App extends React.Component {
             currentGroupMessages = store.getState().groupMessages;
   
             if (previousGroups !== currentGroups) {
-              console.log('############### App store subscription group', currentGroups);
+              console.log('GGGGGGGGGGGGGGGGGGG: App store subscription group', currentGroups);
             }
             if (previousGroupMessages !== currentGroupMessages) {
-              console.log('############### App store subscription groupMessages', currentGroupMessages);
+              console.log('MMMMMMMMMMMMMMMMMMM: App store subscription groupMessages', currentGroupMessages);
             }
           });
         }
@@ -72,7 +72,7 @@ export default class App extends React.Component {
         store.dispatch(actions.logout());
         newState.dbSubscription = false;
         firebaseDB.unregisterAll();
-        // this.unsubscribe();
+        if (DEBUG_STORE) this.unsubscribe();
       }
       this.setState(newState);
     });
@@ -102,12 +102,14 @@ export default class App extends React.Component {
     /* Groups */
     firebaseDB.on('/groups/', 'child_added', (snapshot) => {
       store.dispatch(actions.groupAdded({key: snapshot.key, ...snapshot.val()}))
+      this.subscribeGroupMessages(snapshot.key);
     });
     firebaseDB.on('/groups/', 'child_changed', (snapshot) => {
       store.dispatch(actions.groupChanged({key: snapshot.key, ...snapshot.val()}));
     });
     firebaseDB.on('/groups/', 'child_removed', (snapshot) => {
       store.dispatch(actions.groupRemoved(snapshot.key));
+      this.unsubscribeGroupMessages(snapshot.key);
     });
 
     /* Board messages */
@@ -161,7 +163,6 @@ export default class App extends React.Component {
   
   subscripeGroup(groupKey) {
     // console.log('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Subscribing to group', groupKey)
-
     /* Group */
     firebaseDB.on(`/groups/${groupKey}/`, 'value', (snapshot) => {
       // console.log(`value  ===>  /groups/${groupKey}/`, snapshot.key)
@@ -171,8 +172,18 @@ export default class App extends React.Component {
         store.dispatch(actions.groupRemoved(snapshot.key));
       }
     });
-            
     /* Group messages */
+    this.subscribeGroupMessages(groupKey);
+  }
+  
+  unsubscripeGroup(groupKey) {
+    // console.log('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Unsubscribing from group', groupKey)
+    firebaseDB.unregister(`/groups/${groupKey}/`, 'value');
+    store.dispatch(actions.groupRemoved(groupKey));
+    this.unsubscribeGroupMessages(groupKey);
+  }
+
+  subscribeGroupMessages(groupKey) {
     firebaseDB.on(`/messages/groups/${groupKey}/`, 'child_added', (snapshot) => {
       // console.log(`child_added  ===>  /messages/groups/${groupKey}/`, snapshot.key)
       store.dispatch(actions.groupMessageAdded({
@@ -201,14 +212,12 @@ export default class App extends React.Component {
       }));
     });
   }
-  
-  unsubscripeGroup(groupKey) {
+
+  unsubscribeGroupMessages(groupKey) {
     // console.log('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Unsubscribing from group', groupKey)
-    firebaseDB.unregister(`/groups/${groupKey}/`, 'value');
     firebaseDB.unregister(`/messages/groups/${groupKey}/`, 'child_added');
     firebaseDB.unregister(`/messages/groups/${groupKey}/`, 'child_changed');
     firebaseDB.unregister(`/messages/groups/${groupKey}/`, 'child_removed');
-    store.dispatch(actions.groupRemoved(groupKey));
     store.dispatch(actions.groupMessageUnsubscribed(groupKey));
   }
 
