@@ -55,7 +55,7 @@ export default class App extends React.Component {
           let currentValue;
           this.unsubscribe = store.subscribe(() => {
             let previousValue = currentValue;
-            currentValue = store.getState().groups;
+            currentValue = store.getState().groupMessages;
   
             if (previousValue !== currentValue) {
               console.log('App store subscription >>>', currentValue);
@@ -146,7 +146,7 @@ export default class App extends React.Component {
             });
                     
             /* Group messages */
-            firebaseDB.on(`/messages/${groupKey}/`, 'child_added', (snapshot) => {
+            firebaseDB.on(`/messages/groups/${groupKey}/`, 'child_added', (snapshot) => {
               store.dispatch(actions.groupMessageAdded({
                 groupKey, 
                 message: {
@@ -155,7 +155,7 @@ export default class App extends React.Component {
                 },
               }))
             });
-            firebaseDB.on(`/messages/${groupKey}/`, 'child_changed', (snapshot) => {
+            firebaseDB.on(`/messages/groups/${groupKey}/`, 'child_changed', (snapshot) => {
               store.dispatch(actions.groupMessageChanged({
                 groupKey, 
                 message: {
@@ -164,7 +164,7 @@ export default class App extends React.Component {
                 },
               }))
             });
-            firebaseDB.on(`/messages/${groupKey}/`, 'child_removed', (snapshot) => {
+            firebaseDB.on(`/messages/groups/${groupKey}/`, 'child_removed', (snapshot) => {
               console.log('Removed', snapshot.key)
               store.dispatch(actions.groupMessageRemoved({
                 groupKey, 
