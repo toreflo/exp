@@ -73,7 +73,9 @@ export const logout = () => ({
   type: types.LOGOUT,
 });
 
-export const login = (admin) => ({
+export const login = (admin, uid, name) => ({
   type: types.LOGIN,
+  uid,
   admin,
+  name,
 });

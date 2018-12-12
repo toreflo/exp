@@ -17,110 +17,68 @@ import {
 } from 'native-base';
 import moment from 'moment';
 import 'moment/locale/it';
-import firebase from 'firebase';
+import firebase, { auth } from 'firebase';
 import { connect } from 'react-redux';
 import Dialog from 'react-native-dialog';
-
-import * as gbl from '../gbl';
+import { GiftedChat } from 'react-native-gifted-chat';
+import dismissKeyboard from 'dismissKeyboard';
 
 class ChatScreen extends Component {
   constructor(props) {
     super(props);
-    this.ds = new ListView.DataSource({ rowHasChanged: (r1, r2) => r1 !== r2 });
-    this.state = {};
-    this.showNewMessageDialog = this.showNewMessageDialog.bind(this);
-    this.hideNewMessageDialog = this.hideNewMessageDialog.bind(this);
     this.sendMessage = this.sendMessage.bind(this);
   }
 
-  sendMessage() {
+  sendMessage(messages = []) {
     const { key: groupKey } = this.props.navigation.getParam('group');
-    const { key } = firebase.database().ref(`/messages/groups/${groupKey}`).push();
-    firebase.database().ref(`/messages/groups/${groupKey}/${key}`).set({
-      body: this.state.newMessage,
-    })
-      .then(() => this.hideNewMessageDialog())
-      .catch((error) => {
-        this.hideNewMessageDialog();
-        alert(`${error.name}: ${error.message}`);
-      });
-  }
-
-  showNewMessageDialog() {
-    this.setState({showNewMessage: true});
-  }
-
-  hideNewMessageDialog() {
-    this.setState({showNewMessage: false, newMessage: ''}) 
+    messages.forEach((message) => {
+      const { key } = firebase.database().ref(`/messages/groups/${groupKey}`).push();
+      firebase.database().ref(`/messages/groups/${groupKey}/${key}`).set({
+        ...message,
+        createdAt: message.createdAt.getTime(),
+      })
+        .catch((error) => alert(`${error.name}: ${error.message}`));   
+    });
   }
 
   render() {
-    const admin = this.props.navigation.getParam('admin');
-    const messages = this.props.messages ? this.props.messages : [];
-    const fab = admin ? (
-      <Fab
-        active={true}
-        direction="up"
-        containerStyle={{ }}
-        style={{ backgroundColor: '#5067FF' }}
-        position="bottomRight"
-        onPress={this.showNewMessageDialog}>
-        <Icon type="FontAwesome" name="pencil" />
-      </Fab>
-    ) : null;
-    const content = (
-      <Content>
-        <ListView
-          removeClippedSubviews={false}
-          enableEmptySections
-          style={{ padding: 15, paddingBottom: 75 }}
-          dataSource={this.ds.cloneWithRows(messages)}
-          renderRow={(data) => {
-            return (
-              <Card style={{ borderRadius: 10, overflow: 'hidden' }}>
-                <CardItem>
-                  <Body>
-                    <Text> {data.body} </Text>
-                  </Body>
-                </CardItem>
-                <CardItem style={{justifyContent: 'flex-end'}}>
-                  <Text style={{fontSize: 10}}>
-                    {/* {moment.unix(data.creationTime/1000).format('LLL')}  */}
-                  </Text>
-                </CardItem>
-              </Card>
-            );
-          }}
-        />
-      </Content>
-    );
+    let messages = [];
+    if (this.props.messages) {
+      this.props.messages
+        .forEach(message => {
+          messages = GiftedChat.append(messages, [{
+            _id: message.key,
+            createdAt: new Date(message.createdAt),
+            text: message.text,
+            user: {
+              ...message.user,
+              avatar: 'https://placeimg.com/140/140/any',
+            },
+          }]);
+        });
+    }
 
     return (
-      <Container style={{ backgroundColor: gbl.backgroundColor }}>
-        <View style={{ flex: 1 }}>
-          {content}
-          {fab}
-        </View>
-        <View>
-          <Dialog.Container visible={this.state.showNewMessage}>
-            <Dialog.Title>Nuovo messaggio</Dialog.Title>
-            <Dialog.Description>
-              Inserisci messaggio:
-            </Dialog.Description>
-            <Dialog.Input 
-              autoFocus={this.state.showNewMessage}
-              onChangeText={(newMessage) => this.setState({ newMessage })}
-              value={this.state.newMessage}
-            />
-            <Dialog.Button label="Annulla" onPress={this.hideNewMessageDialog}/>
-            <Dialog.Button label="Conferma" onPress={ this.sendMessage }/>
-          </Dialog.Container>
-        </View>
-      </Container>
+      <GiftedChat
+        messages={messages}
+        onSend={newMessages => this.sendMessage(newMessages)}
+        locale="it"
+        isAnimated
+        // loadEarlier
+        // keyboardShouldPersistTaps={'never'}
+        renderInputToolbar={this.props.admin ? undefined : () => null}
+        user={{
+          _id: this.props.uid,
+          name: this.props.username,
+        }}
+      />
     );
   }
 }
 const mapStateToProps = (state, ownProps) => ({
+  uid: state.info.uid,
+  admin: state.info.admin,
+  username: state.info.name,
   messages: state.groupMessages[ownProps.navigation.getParam('group', {}).key],
 });
 

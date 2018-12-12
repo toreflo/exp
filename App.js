@@ -41,7 +41,7 @@ export default class App extends React.Component {
         firebaseDB.once(`/admins/${user.uid}`, 'value', (snapshot) => {
           const newState = {loading: false, user, dbSubscription: true};
           if (snapshot.val() && snapshot.val().admin) {
-            this.subscribeAdmin();
+            this.subscribeAdmin(user.uid);
             newState.admin = true;
           } else {
             this.subscribeUser(user.uid);            
@@ -84,8 +84,11 @@ export default class App extends React.Component {
     this.authRemoveSubscription();
   }
 
-  subscribeAdmin() {
-    store.dispatch(actions.login(true));
+  subscribeAdmin(uid) {
+    firebaseDB.once(`/admins/${uid}`, 'value', (snapshot) => {
+      const { name } = snapshot.val();
+      store.dispatch(actions.login(true, uid, name));
+    });
 
     /* Users */
     firebaseDB.on('/users/', 'child_added', (snapshot) => {
@@ -124,7 +127,7 @@ export default class App extends React.Component {
   }
 
   subscribeUser(uid) {
-    store.dispatch(actions.login(false));
+    store.dispatch(actions.login(false, uid));
 
     /* Board messages */
     firebaseDB.on('/messages/board/', 'child_added', (snapshot) => {
