@@ -36,7 +36,7 @@ class WriteMessageScreen extends Component {
   }
 
   componentDidMount() {
-    this.props.navigation.setParams({title: 'Nuovo messaggio'});
+    this.props.navigation.setParams({title: ''});
     const editInfo = this.props.navigation.getParam('editInfo', null);
     let callback = this.sendMessage;
     let iconName = 'ios-send';
