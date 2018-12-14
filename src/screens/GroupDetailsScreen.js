@@ -30,7 +30,13 @@ class GroupDetailsScreen extends Component {
   }
 
   componentDidMount() {
+    this.props.navigation.setParams({title: name});
+  }
+  
+  componentDidMount() {
+    const { name } = this.props.navigation.getParam('group');
     this.props.navigation.setParams({
+      title: `Utenti di ${name}`,
       rightButtons: [{
         key: 1,
         callback: this.showConfirmDialog,

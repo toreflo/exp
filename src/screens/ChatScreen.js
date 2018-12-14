@@ -29,6 +29,11 @@ class ChatScreen extends Component {
     this.sendMessage = this.sendMessage.bind(this);
   }
 
+  componentDidMount() {
+    const { name } = this.props.navigation.getParam('group');
+    this.props.navigation.setParams({title: name});
+  }
+
   sendMessage(messages = []) {
     const { key: groupKey } = this.props.navigation.getParam('group');
     messages.forEach((message) => {

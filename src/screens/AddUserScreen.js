@@ -30,6 +30,10 @@ class AddUserScreen extends Component {
     this.addUser = this.addUser.bind(this);
   }
 
+  componentDidMount() {
+    this.props.navigation.setParams({title: 'Nuovo iscritto'});
+  }
+
   addUser() {
     const { email, password, name, surname } = this.state;
     firebase.auth().currentUser.getIdToken(true)

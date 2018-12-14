@@ -7,13 +7,16 @@ import {
 import { connect } from 'react-redux';
 
 class UserDetailsScreen extends Component {
+
+  componentDidMount() {
+    const { name, surname } = this.props.navigation.getParam('user');
+    this.props.navigation.setParams({title: `${name} ${surname}`});
+  }
+
   render() {
     let groupList = null;
-    const key = this.props.navigation.getParam('userKey');
-    const user = this.props.users.find(user => user.key === key);
-    if (!user) return null;
+    const { name, surname, email, groups } = this.props.navigation.getParam('user');
 
-    const { name, surname, email, groups } = user;
     if (groups) {
       groupList = Object.keys(groups).map((groupKey) => {
         const group = this.props.groups.find(g => g.key === groupKey);
@@ -38,7 +41,6 @@ class UserDetailsScreen extends Component {
 
 const mapStateToProps = (state) => ({
   groups: state.groups,
-  users: state.users,
 });
 
 export default connect(mapStateToProps)(UserDetailsScreen);
