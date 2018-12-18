@@ -22,7 +22,7 @@ export default class App extends React.Component {
       loading: true,
     };
   }
-
+  
   async componentWillMount() {
     const firebaseApp = firebase.initializeApp(config.firebaseConfig);
     await Font.loadAsync({
@@ -30,11 +30,11 @@ export default class App extends React.Component {
       Roboto_medium: require("native-base/Fonts/Roboto_medium.ttf")
     });
   }
-
+  
   /**
-   * When the App component mounts, we listen for any authentication
-   * state changes in Firebase. 
-   */
+  * When the App component mounts, we listen for any authentication
+  * state changes in Firebase. 
+  */
   componentDidMount() {
     this.authRemoveSubscription = firebase.auth().onAuthStateChanged((user) => {
       if (user) {
@@ -42,6 +42,7 @@ export default class App extends React.Component {
           const newState = {loading: false, user, dbSubscription: true};
           if (snapshot.val() && snapshot.val().admin) {
             this.subscribeAdmin(user.uid);
+            this.getAvatar(user.uid);
             newState.admin = true;
           } else {
             this.subscribeUser(user.uid);            
@@ -57,7 +58,7 @@ export default class App extends React.Component {
             currentGroups = store.getState().groups;
             let previousGroupMessages = currentGroupMessages;
             currentGroupMessages = store.getState().groupMessages;
-  
+            
             if (previousGroups !== currentGroups) {
               console.log('GGGGGGGGGGGGGGGGGGG: App store subscription group', currentGroups);
             }
@@ -76,20 +77,27 @@ export default class App extends React.Component {
       }
     });
   }
-
+  
   /* Stop listening for authentication state changes
-   * when the component unmounts.
-   */
+  * when the component unmounts.
+  */
   componentWillUnmount() {
     this.authRemoveSubscription();
   }
-
+  
+  getAvatar(uid) {
+    const ref = firebase.storage().ref().child('/images/' + uid);
+    ref.getDownloadURL()
+      .then(url => store.dispatch(actions.setAvatar(url)))
+      .catch((error) => alert(error.code))
+  }
+  
   subscribeAdmin(uid) {
     firebaseDB.once(`/admins/${uid}`, 'value', (snapshot) => {
       const { name } = snapshot.val();
       store.dispatch(actions.login(true, uid, name));
     });
-
+    
     /* Users */
     firebaseDB.on('/users/', 'child_added', (snapshot) => {
       store.dispatch(actions.userAdded({key: snapshot.key, ...snapshot.val()}))
@@ -100,7 +108,7 @@ export default class App extends React.Component {
     firebaseDB.on('/users/', 'child_removed', (snapshot) => {
       store.dispatch(actions.userRemoved(snapshot.key));
     });
-
+    
     /* Groups */
     firebaseDB.on('/groups/', 'child_added', (snapshot) => {
       store.dispatch(actions.groupAdded({key: snapshot.key, ...snapshot.val()}))
@@ -113,7 +121,7 @@ export default class App extends React.Component {
       store.dispatch(actions.groupRemoved(snapshot.key));
       this.unsubscribeGroupMessages(snapshot.key);
     });
-
+    
     /* Board messages */
     firebaseDB.on('/messages/board/', 'child_added', (snapshot) => {
       store.dispatch(actions.boardMessageAdded({key: snapshot.key, ...snapshot.val()}))
@@ -125,10 +133,10 @@ export default class App extends React.Component {
       store.dispatch(actions.boardMessageRemoved(snapshot.key));
     });
   }
-
+  
   subscribeUser(uid) {
     store.dispatch(actions.login(false, uid));
-
+    
     /* Board messages */
     firebaseDB.on('/messages/board/', 'child_added', (snapshot) => {
       store.dispatch(actions.boardMessageAdded({key: snapshot.key, ...snapshot.val()}))
@@ -139,10 +147,10 @@ export default class App extends React.Component {
     firebaseDB.on('/messages/board/', 'child_removed', (snapshot) => {
       store.dispatch(actions.boardMessageRemoved(snapshot.key));
     });    
-
+    
     let groups = {};
     let prevGroups;
-
+    
     /* Groups and group messages */
     firebaseDB.on(`/users/${uid}`, 'value', (snapshot) => {
       prevGroups = groups;
@@ -150,15 +158,15 @@ export default class App extends React.Component {
       if (!groups) groups = {};
       const groupsAdded = Object.keys(groups).filter(key => prevGroups[key] === undefined);
       const groupsRemoved = Object.keys(prevGroups).filter(key => groups[key] === undefined);
-
+      
       if (groupsAdded.length > 0) {
         groupsAdded.forEach((groupKey) => {
           this.subscripeGroup(groupKey);
         });
       } else if (groupsRemoved.length > 0) {
-          groupsRemoved.forEach((groupKey) => {
-            this.unsubscripeGroup(groupKey);
-          });
+        groupsRemoved.forEach((groupKey) => {
+          this.unsubscripeGroup(groupKey);
+        });
       }
     });
   }  
@@ -184,7 +192,7 @@ export default class App extends React.Component {
     store.dispatch(actions.groupRemoved(groupKey));
     this.unsubscribeGroupMessages(groupKey);
   }
-
+  
   subscribeGroupMessages(groupKey) {
     firebaseDB.on(`/messages/groups/${groupKey}/`, 'child_added', (snapshot) => {
       // console.log(`child_added  ===>  /messages/groups/${groupKey}/`, snapshot.key)
@@ -214,7 +222,7 @@ export default class App extends React.Component {
       }));
     });
   }
-
+  
   unsubscribeGroupMessages(groupKey) {
     // console.log('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Unsubscribing from group', groupKey)
     firebaseDB.unregister(`/messages/groups/${groupKey}/`, 'child_added');
@@ -222,32 +230,33 @@ export default class App extends React.Component {
     firebaseDB.unregister(`/messages/groups/${groupKey}/`, 'child_removed');
     store.dispatch(actions.groupMessageUnsubscribed(groupKey));
   }
-
+  
   render() {
     let app;
     if (this.state.loading) {
       app = (
         <View style={styles.container}>
-          <Spinner />
+        <Spinner />
         </View>
-      );
-    } else if (this.state.user) {
-      app = <HomeNavigator admin={this.state.admin} />;
-    } else app = <WelcomeNavigator />;
-
-    return (
-      <Provider store={ store }>
+        );
+      } else if (this.state.user) {
+        app = <HomeNavigator admin={this.state.admin} />;
+      } else app = <WelcomeNavigator />;
+      
+      return (
+        <Provider store={ store }>
         {app}
-      </Provider>
-    );
-  }
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: gbl.backgroundColor,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+        </Provider>
+        );
+      }
+    }
+    
+    const styles = StyleSheet.create({
+      container: {
+        flex: 1,
+        backgroundColor: gbl.backgroundColor,
+        alignItems: 'center',
+        justifyContent: 'center',
+      },
+    });
+    
