@@ -66,7 +66,7 @@ class HomeTabNavigator extends React.Component {
         </StyleProvider>      
       );
     }
-    const nav = createBottomTabNavigator(routes, { tabBarComponent });
+    const nav = createBottomTabNavigator(routes, { tabBarComponent, title: 'pippolino' });
     return React.createElement(nav, {});
   }
 }

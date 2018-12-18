@@ -32,6 +32,10 @@ class GroupsScreen extends Component {
     this.hideGroupDialog = this.hideGroupDialog.bind(this);
   }
 
+  componentDidMount() {
+    this.props.navigation.setParams({title: 'Chat gruppi'});
+  }
+
   createGroup() {
     const { key } = firebase.database().ref('/groups/').push();
     firebase.database().ref('/groups/' + key).set({

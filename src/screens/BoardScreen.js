@@ -33,6 +33,10 @@ class BoardScreen extends Component {
     this.togglePinned = this.togglePinned.bind(this);
   }
 
+  componentDidMount() {
+    this.props.navigation.setParams({title: 'Bacheca'});
+  }
+
   togglePinned(data) {
     this.db.ref().update({['/messages/board/' + data.key + '/pinned/']: !data.pinned})
       .catch((error) => {

@@ -27,6 +27,10 @@ class AddUserToGroupScreen extends Component {
     this.addUser = this.addUser.bind(this);
   }
 
+  componentDidMount() {
+    this.props.navigation.setParams({title: 'Aggiunta utente'});
+  }
+
   addUser(user, secId, rowId, rowMap) {
     const { key: groupKey } = this.props.navigation.getParam('group');
     rowMap[`${secId}${rowId}`].props.closeRow();

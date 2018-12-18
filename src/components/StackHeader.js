@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { Header, Left, Right, Body, Title, Icon, Button } from 'native-base';
+import { Header, Left, Right, Body, Title, Text, Icon, Button } from 'native-base';
 import { initialRouteKey } from '../gbl';
 
 class StackHeader extends Component {
@@ -88,7 +88,7 @@ class StackHeader extends Component {
       <Header>
         {left}
         <Body>
-          <Title>{title}</Title>
+          <Text>{title}</Text>
         </Body>
         <Right>{right}</Right>
       </Header>

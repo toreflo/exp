@@ -25,7 +25,7 @@ import firebase from 'firebase';
 import config from '../../config';
 
 class UsersScreen extends Component {
-  static navigationOptions = ({ navigation }) => {
+  /* static navigationOptions = ({ navigation }) => {
     const activeSegment = navigation.getParam('activeSegment', 'users');
     return {
       header: (
@@ -53,7 +53,7 @@ class UsersScreen extends Component {
         </Header>
       ),
     }
-  };
+  }; */
 
   constructor(props) {
     super(props);
@@ -63,6 +63,10 @@ class UsersScreen extends Component {
     };
     this.db = firebase.database();
     this.addUser = this.addUser.bind(this);
+  }
+
+  componentDidMount() {
+    this.props.navigation.setParams({title: 'Utenti'});
   }
 
   addUser() {
@@ -103,7 +107,7 @@ class UsersScreen extends Component {
         renderRow={(data) => (
           <ListItem onPress={() => this.props.navigation.navigate(
             'UserDetailsScreen',
-            { userKey: data.key },
+            { user: data },
             )}
           >
             <Text> {`${data.name} ${data.surname}`} </Text>
