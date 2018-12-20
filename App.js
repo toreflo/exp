@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Spinner } from 'native-base';
 import firebase from 'firebase';
-import { Font } from "expo";
+import { Font, FileSystem } from "expo";
 import { createStore } from 'redux';
 import { Provider, connect } from 'react-redux';
 
@@ -87,9 +87,25 @@ export default class App extends React.Component {
   
   getAvatar(uid) {
     const ref = firebase.storage().ref().child('/images/' + uid);
-    ref.getDownloadURL()
-      .then(url => store.dispatch(actions.setAvatar(url)))
-      .catch((error) => alert(error.code))
+    const filename = FileSystem.documentDirectory + uid + '.jpeg';
+
+    Promise.all([
+      FileSystem.getInfoAsync(filename),
+      ref.getMetadata(),
+    ])
+      .then(([localInfo, remoteInfo]) => {
+        if (new Date(remoteInfo.timeCreated).getTime()/1000 > localInfo.modificationTime) {
+          ref.getDownloadURL()
+          .then((url) => FileSystem.downloadAsync(url, filename))
+          .then(({uri}) => {
+            console.log('File', filename, 'downloaded')
+            store.dispatch(actions.setAvatar(uri));
+          })
+          .catch((error) => alert(error));
+        } else store.dispatch(actions.setAvatar(filename));
+      })
+      .catch((error) => alert(error));
+      
   }
   
   subscribeAdmin(uid) {
