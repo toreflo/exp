@@ -28,7 +28,7 @@ class MeScreen extends Component {
             [{ resize: { width: IMAGE_DIM }}],
           );
           await this.uploadImageAsync(resizedImage.uri); 
-          this.props.dispatch(actions.setAvatar(resizedImage.uri));
+          this.props.dispatch(actions.updateAvatar(this.props.uid, resizedImage.uri));
           alert('Immagine caricata')
         }
       }  
@@ -103,7 +103,7 @@ class MeScreen extends Component {
 
 const mapStateToProps = (state) => ({
   uid: state.info.uid,
-  avatar: state.info.avatarUrl,
+  avatar: state.info.avatars[state.info.uid],
 });
 
 export default connect(mapStateToProps)(MeScreen);

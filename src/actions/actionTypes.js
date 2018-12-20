@@ -17,4 +17,4 @@ export const GROUP_UNSUBSCRIBED = 'GROUP_UNSUBSCRIBED';
 
 export const LOGOUT = 'LOGOUT';
 export const LOGIN = 'LOGIN';
-export const SET_AVATAR = 'SET_AVATAR';
+export const UPDATE_AVATAR = 'UPDATE_AVATAR';

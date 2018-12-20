@@ -38,18 +38,23 @@ export default class App extends React.Component {
   componentDidMount() {
     this.authRemoveSubscription = firebase.auth().onAuthStateChanged((user) => {
       if (user) {
-        firebaseDB.once(`/admins/${user.uid}`, 'value', (snapshot) => {
+        firebaseDB.once(`/admins/`, 'value', (snapshot) => {
+          let isAdmin = false;
           const newState = {loading: false, user, dbSubscription: true};
-          if (snapshot.val() && snapshot.val().admin) {
+          snapshot.forEach((child) => {
+            this.getAvatar(child.key);
+            if ((child.key === user.uid) && child.val().admin) isAdmin = true;
+          });
+          if (isAdmin) {
             this.subscribeAdmin(user.uid);
-            this.getAvatar(user.uid);
             newState.admin = true;
           } else {
             this.subscribeUser(user.uid);            
             newState.admin = false;
-          }
+          }          
           this.setState(newState);
         })
+
         if (DEBUG_STORE) {
           let currentGroups;
           let currentGroupMessages;
@@ -85,203 +90,203 @@ export default class App extends React.Component {
     this.authRemoveSubscription();
   }
   
-  downloadFile(ref, outfile, localInfo) {
+  downloadFile(uid, ref, outfile, localInfo) {
     ref.getDownloadURL()
     .then((url) => FileSystem.downloadAsync(url, outfile))
     .then(({uri}) => {
-      if (localInfo) console.log('File', outfile, 'downloaded (local exists:', localInfo.exists, ')');
-      else console.log('File', outfile, 'downloaded (remote not found)');
-      store.dispatch(actions.setAvatar(uri));
+      console.log('File', outfile, 'downloaded (local exists:', localInfo.exists, ')');
+      store.dispatch(actions.updateAvatar(uid, uri));
     })
     .catch((error) => alert(JSON.stringify(error)));
   }
-
+  
   getAvatar(uid) {
+    console.log('Getting', uid, 'avatar')
     const ref = firebase.storage().ref().child('/avatars/' + uid);
     const filename = FileSystem.documentDirectory + uid + '.jpeg';
-
+    
     Promise.all([
       FileSystem.getInfoAsync(filename),
       ref.getMetadata(),
     ])
-      .then(([localInfo, remoteInfo]) => {
-        if (!localInfo.exists || 
-            (new Date(remoteInfo.timeCreated).getTime()/1000 > localInfo.modificationTime)) {
-              this.downloadFile(ref, filename, localInfo);
-        } else store.dispatch(actions.setAvatar(filename));
+    .then(([localInfo, remoteInfo]) => {
+      if (!localInfo.exists || 
+        (new Date(remoteInfo.timeCreated).getTime()/1000 > localInfo.modificationTime)) {
+          this.downloadFile(uid, ref, filename, localInfo);
+        } else store.dispatch(actions.updateAvatar(uid, filename));
       })
       .catch((error) => {
         if (error.code === 'storage/object-not-found') return;
         alert(JSON.stringify(error));
       });
       
-  }
-  
-  subscribeAdmin(uid) {
-    firebaseDB.once(`/admins/${uid}`, 'value', (snapshot) => {
-      const { name } = snapshot.val();
-      store.dispatch(actions.login(true, uid, name));
-    });
-    
-    /* Users */
-    firebaseDB.on('/users/', 'child_added', (snapshot) => {
-      store.dispatch(actions.userAdded({key: snapshot.key, ...snapshot.val()}))
-    });
-    firebaseDB.on('/users/', 'child_changed', (snapshot) => {
-      store.dispatch(actions.userChanged({key: snapshot.key, ...snapshot.val()}));
-    });
-    firebaseDB.on('/users/', 'child_removed', (snapshot) => {
-      store.dispatch(actions.userRemoved(snapshot.key));
-    });
-    
-    /* Groups */
-    firebaseDB.on('/groups/', 'child_added', (snapshot) => {
-      store.dispatch(actions.groupAdded({key: snapshot.key, ...snapshot.val()}))
-      this.subscribeGroupMessages(snapshot.key);
-    });
-    firebaseDB.on('/groups/', 'child_changed', (snapshot) => {
-      store.dispatch(actions.groupChanged({key: snapshot.key, ...snapshot.val()}));
-    });
-    firebaseDB.on('/groups/', 'child_removed', (snapshot) => {
-      store.dispatch(actions.groupRemoved(snapshot.key));
-      this.unsubscribeGroupMessages(snapshot.key);
-    });
-    
-    /* Board messages */
-    firebaseDB.on('/messages/board/', 'child_added', (snapshot) => {
-      store.dispatch(actions.boardMessageAdded({key: snapshot.key, ...snapshot.val()}))
-    });
-    firebaseDB.on('/messages/board/', 'child_changed', (snapshot) => {
-      store.dispatch(actions.boardMessageChanged({key: snapshot.key, ...snapshot.val()}));
-    });
-    firebaseDB.on('/messages/board/', 'child_removed', (snapshot) => {
-      store.dispatch(actions.boardMessageRemoved(snapshot.key));
-    });
-  }
-  
-  subscribeUser(uid) {
-    store.dispatch(actions.login(false, uid));
-    
-    /* Board messages */
-    firebaseDB.on('/messages/board/', 'child_added', (snapshot) => {
-      store.dispatch(actions.boardMessageAdded({key: snapshot.key, ...snapshot.val()}))
-    });
-    firebaseDB.on('/messages/board/', 'child_changed', (snapshot) => {
-      store.dispatch(actions.boardMessageChanged({key: snapshot.key, ...snapshot.val()}));
-    });
-    firebaseDB.on('/messages/board/', 'child_removed', (snapshot) => {
-      store.dispatch(actions.boardMessageRemoved(snapshot.key));
-    });    
-    
-    let groups = {};
-    let prevGroups;
-    
-    /* Groups and group messages */
-    firebaseDB.on(`/users/${uid}`, 'value', (snapshot) => {
-      prevGroups = groups;
-      ({ groups } = snapshot.val());
-      if (!groups) groups = {};
-      const groupsAdded = Object.keys(groups).filter(key => prevGroups[key] === undefined);
-      const groupsRemoved = Object.keys(prevGroups).filter(key => groups[key] === undefined);
-      
-      if (groupsAdded.length > 0) {
-        groupsAdded.forEach((groupKey) => {
-          this.subscripeGroup(groupKey);
-        });
-      } else if (groupsRemoved.length > 0) {
-        groupsRemoved.forEach((groupKey) => {
-          this.unsubscripeGroup(groupKey);
-        });
-      }
-    });
-  }  
-  
-  subscripeGroup(groupKey) {
-    // console.log('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Subscribing to group', groupKey)
-    /* Group */
-    firebaseDB.on(`/groups/${groupKey}/`, 'value', (snapshot) => {
-      // console.log(`value  ===>  /groups/${groupKey}/`, snapshot.key)
-      if (snapshot.val()) {
-        store.dispatch(actions.groupChanged({key: snapshot.key, ...snapshot.val()}))
-      } else {
-        store.dispatch(actions.groupRemoved(snapshot.key));
-      }
-    });
-    /* Group messages */
-    this.subscribeGroupMessages(groupKey);
-  }
-  
-  unsubscripeGroup(groupKey) {
-    // console.log('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Unsubscribing from group', groupKey)
-    firebaseDB.unregister(`/groups/${groupKey}/`, 'value');
-    store.dispatch(actions.groupRemoved(groupKey));
-    this.unsubscribeGroupMessages(groupKey);
-  }
-  
-  subscribeGroupMessages(groupKey) {
-    firebaseDB.on(`/messages/groups/${groupKey}/`, 'child_added', (snapshot) => {
-      // console.log(`child_added  ===>  /messages/groups/${groupKey}/`, snapshot.key)
-      store.dispatch(actions.groupMessageAdded({
-        groupKey, 
-        message: {
-          key: snapshot.key,
-          ...snapshot.val(),
-        },
-      }))
-    });
-    firebaseDB.on(`/messages/groups/${groupKey}/`, 'child_changed', (snapshot) => {
-      // console.log(`child_changed  ===>  /messages/groups/${groupKey}/`, snapshot.key)
-      store.dispatch(actions.groupMessageChanged({
-        groupKey, 
-        message: {
-          key: snapshot.key,
-          ...snapshot.val(),
-        },
-      }));
-    });
-    firebaseDB.on(`/messages/groups/${groupKey}/`, 'child_removed', (snapshot) => {
-      // console.log(`child_changed  ===>  /messages/groups/${groupKey}/`, snapshot.key)
-      store.dispatch(actions.groupMessageRemoved({
-        groupKey, 
-        messageKey: snapshot.key,
-      }));
-    });
-  }
-  
-  unsubscribeGroupMessages(groupKey) {
-    // console.log('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Unsubscribing from group', groupKey)
-    firebaseDB.unregister(`/messages/groups/${groupKey}/`, 'child_added');
-    firebaseDB.unregister(`/messages/groups/${groupKey}/`, 'child_changed');
-    firebaseDB.unregister(`/messages/groups/${groupKey}/`, 'child_removed');
-    store.dispatch(actions.groupMessageUnsubscribed(groupKey));
-  }
-  
-  render() {
-    let app;
-    if (this.state.loading) {
-      app = (
-        <View style={styles.container}>
-        <Spinner />
-        </View>
-        );
-      } else if (this.state.user) {
-        app = <HomeNavigator admin={this.state.admin} />;
-      } else app = <WelcomeNavigator />;
-      
-      return (
-        <Provider store={ store }>
-        {app}
-        </Provider>
-        );
-      }
     }
     
-    const styles = StyleSheet.create({
-      container: {
-        flex: 1,
-        backgroundColor: gbl.backgroundColor,
-        alignItems: 'center',
-        justifyContent: 'center',
-      },
-    });
+    subscribeAdmin(uid) {
+      firebaseDB.once(`/admins/${uid}`, 'value', (snapshot) => {
+        const { name } = snapshot.val();
+        store.dispatch(actions.login(true, uid, name));
+      });
+      
+      /* Users */
+      firebaseDB.on('/users/', 'child_added', (snapshot) => {
+        store.dispatch(actions.userAdded({key: snapshot.key, ...snapshot.val()}))
+      });
+      firebaseDB.on('/users/', 'child_changed', (snapshot) => {
+        store.dispatch(actions.userChanged({key: snapshot.key, ...snapshot.val()}));
+      });
+      firebaseDB.on('/users/', 'child_removed', (snapshot) => {
+        store.dispatch(actions.userRemoved(snapshot.key));
+      });
+      
+      /* Groups */
+      firebaseDB.on('/groups/', 'child_added', (snapshot) => {
+        store.dispatch(actions.groupAdded({key: snapshot.key, ...snapshot.val()}))
+        this.subscribeGroupMessages(snapshot.key);
+      });
+      firebaseDB.on('/groups/', 'child_changed', (snapshot) => {
+        store.dispatch(actions.groupChanged({key: snapshot.key, ...snapshot.val()}));
+      });
+      firebaseDB.on('/groups/', 'child_removed', (snapshot) => {
+        store.dispatch(actions.groupRemoved(snapshot.key));
+        this.unsubscribeGroupMessages(snapshot.key);
+      });
+      
+      /* Board messages */
+      firebaseDB.on('/messages/board/', 'child_added', (snapshot) => {
+        store.dispatch(actions.boardMessageAdded({key: snapshot.key, ...snapshot.val()}))
+      });
+      firebaseDB.on('/messages/board/', 'child_changed', (snapshot) => {
+        store.dispatch(actions.boardMessageChanged({key: snapshot.key, ...snapshot.val()}));
+      });
+      firebaseDB.on('/messages/board/', 'child_removed', (snapshot) => {
+        store.dispatch(actions.boardMessageRemoved(snapshot.key));
+      });
+    }
     
+    subscribeUser(uid) {
+      store.dispatch(actions.login(false, uid));
+      
+      /* Board messages */
+      firebaseDB.on('/messages/board/', 'child_added', (snapshot) => {
+        store.dispatch(actions.boardMessageAdded({key: snapshot.key, ...snapshot.val()}))
+      });
+      firebaseDB.on('/messages/board/', 'child_changed', (snapshot) => {
+        store.dispatch(actions.boardMessageChanged({key: snapshot.key, ...snapshot.val()}));
+      });
+      firebaseDB.on('/messages/board/', 'child_removed', (snapshot) => {
+        store.dispatch(actions.boardMessageRemoved(snapshot.key));
+      });    
+      
+      let groups = {};
+      let prevGroups;
+      
+      /* Groups and group messages */
+      firebaseDB.on(`/users/${uid}`, 'value', (snapshot) => {
+        prevGroups = groups;
+        ({ groups } = snapshot.val());
+        if (!groups) groups = {};
+        const groupsAdded = Object.keys(groups).filter(key => prevGroups[key] === undefined);
+        const groupsRemoved = Object.keys(prevGroups).filter(key => groups[key] === undefined);
+        
+        if (groupsAdded.length > 0) {
+          groupsAdded.forEach((groupKey) => {
+            this.subscripeGroup(groupKey);
+          });
+        } else if (groupsRemoved.length > 0) {
+          groupsRemoved.forEach((groupKey) => {
+            this.unsubscripeGroup(groupKey);
+          });
+        }
+      });
+    }  
+    
+    subscripeGroup(groupKey) {
+      // console.log('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Subscribing to group', groupKey)
+      /* Group */
+      firebaseDB.on(`/groups/${groupKey}/`, 'value', (snapshot) => {
+        // console.log(`value  ===>  /groups/${groupKey}/`, snapshot.key)
+        if (snapshot.val()) {
+          store.dispatch(actions.groupChanged({key: snapshot.key, ...snapshot.val()}))
+        } else {
+          store.dispatch(actions.groupRemoved(snapshot.key));
+        }
+      });
+      /* Group messages */
+      this.subscribeGroupMessages(groupKey);
+    }
+    
+    unsubscripeGroup(groupKey) {
+      // console.log('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Unsubscribing from group', groupKey)
+      firebaseDB.unregister(`/groups/${groupKey}/`, 'value');
+      store.dispatch(actions.groupRemoved(groupKey));
+      this.unsubscribeGroupMessages(groupKey);
+    }
+    
+    subscribeGroupMessages(groupKey) {
+      firebaseDB.on(`/messages/groups/${groupKey}/`, 'child_added', (snapshot) => {
+        // console.log(`child_added  ===>  /messages/groups/${groupKey}/`, snapshot.key)
+        store.dispatch(actions.groupMessageAdded({
+          groupKey, 
+          message: {
+            key: snapshot.key,
+            ...snapshot.val(),
+          },
+        }))
+      });
+      firebaseDB.on(`/messages/groups/${groupKey}/`, 'child_changed', (snapshot) => {
+        // console.log(`child_changed  ===>  /messages/groups/${groupKey}/`, snapshot.key)
+        store.dispatch(actions.groupMessageChanged({
+          groupKey, 
+          message: {
+            key: snapshot.key,
+            ...snapshot.val(),
+          },
+        }));
+      });
+      firebaseDB.on(`/messages/groups/${groupKey}/`, 'child_removed', (snapshot) => {
+        // console.log(`child_changed  ===>  /messages/groups/${groupKey}/`, snapshot.key)
+        store.dispatch(actions.groupMessageRemoved({
+          groupKey, 
+          messageKey: snapshot.key,
+        }));
+      });
+    }
+    
+    unsubscribeGroupMessages(groupKey) {
+      // console.log('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Unsubscribing from group', groupKey)
+      firebaseDB.unregister(`/messages/groups/${groupKey}/`, 'child_added');
+      firebaseDB.unregister(`/messages/groups/${groupKey}/`, 'child_changed');
+      firebaseDB.unregister(`/messages/groups/${groupKey}/`, 'child_removed');
+      store.dispatch(actions.groupMessageUnsubscribed(groupKey));
+    }
+    
+    render() {
+      let app;
+      if (this.state.loading) {
+        app = (
+          <View style={styles.container}>
+          <Spinner />
+          </View>
+          );
+        } else if (this.state.user) {
+          app = <HomeNavigator admin={this.state.admin} />;
+        } else app = <WelcomeNavigator />;
+        
+        return (
+          <Provider store={ store }>
+          {app}
+          </Provider>
+          );
+        }
+      }
+      
+      const styles = StyleSheet.create({
+        container: {
+          flex: 1,
+          backgroundColor: gbl.backgroundColor,
+          alignItems: 'center',
+          justifyContent: 'center',
+        },
+      });
+      

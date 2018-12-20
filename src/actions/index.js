@@ -80,7 +80,8 @@ export const login = (admin, uid, name) => ({
   name,
 });
 
-export const setAvatar = (url) => ({
-  type: types.SET_AVATAR,
-  url,
+export const updateAvatar = (uid, uri) => ({
+  type: types.UPDATE_AVATAR,
+  uid,
+  uri,
 });
