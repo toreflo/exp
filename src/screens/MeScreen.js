@@ -56,7 +56,7 @@ class MeScreen extends Component {
     });
   
     const name = `${this.props.uid}`;
-    var ref = firebase.storage().ref().child('/images/' + name);
+    var ref = firebase.storage().ref().child('/avatars/' + name);
     await ref.put(blob);
 
     blob.close();

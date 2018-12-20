@@ -85,8 +85,19 @@ export default class App extends React.Component {
     this.authRemoveSubscription();
   }
   
+  downloadFile(ref, outfile, localInfo) {
+    ref.getDownloadURL()
+    .then((url) => FileSystem.downloadAsync(url, outfile))
+    .then(({uri}) => {
+      if (localInfo) console.log('File', outfile, 'downloaded (local exists:', localInfo.exists, ')');
+      else console.log('File', outfile, 'downloaded (remote not found)');
+      store.dispatch(actions.setAvatar(uri));
+    })
+    .catch((error) => alert(JSON.stringify(error)));
+  }
+
   getAvatar(uid) {
-    const ref = firebase.storage().ref().child('/images/' + uid);
+    const ref = firebase.storage().ref().child('/avatars/' + uid);
     const filename = FileSystem.documentDirectory + uid + '.jpeg';
 
     Promise.all([
@@ -94,17 +105,15 @@ export default class App extends React.Component {
       ref.getMetadata(),
     ])
       .then(([localInfo, remoteInfo]) => {
-        if (new Date(remoteInfo.timeCreated).getTime()/1000 > localInfo.modificationTime) {
-          ref.getDownloadURL()
-          .then((url) => FileSystem.downloadAsync(url, filename))
-          .then(({uri}) => {
-            console.log('File', filename, 'downloaded')
-            store.dispatch(actions.setAvatar(uri));
-          })
-          .catch((error) => alert(error));
+        if (!localInfo.exists || 
+            (new Date(remoteInfo.timeCreated).getTime()/1000 > localInfo.modificationTime)) {
+              this.downloadFile(ref, filename, localInfo);
         } else store.dispatch(actions.setAvatar(filename));
       })
-      .catch((error) => alert(error));
+      .catch((error) => {
+        if (error.code === 'storage/object-not-found') return;
+        alert(JSON.stringify(error));
+      });
       
   }
   
