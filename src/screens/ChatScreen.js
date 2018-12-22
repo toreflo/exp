@@ -48,16 +48,19 @@ class ChatScreen extends Component {
 
   render() {
     let messages = [];
+    let avatar = null;
     if (this.props.messages) {
       this.props.messages
         .forEach(message => {
+          if (this.props.avatars[message.user._id])
+            avatar = this.props.avatars[message.user._id];
           messages = GiftedChat.append(messages, [{
             _id: message.key,
             createdAt: new Date(message.createdAt),
             text: message.text,
             user: {
               ...message.user,
-              avatar: 'https://placeimg.com/140/140/any',
+              avatar,
             },
           }]);
         });
@@ -84,6 +87,7 @@ const mapStateToProps = (state, ownProps) => ({
   uid: state.info.uid,
   admin: state.info.admin,
   username: state.info.name,
+  avatars: state.info.avatars,
   messages: state.groupMessages[ownProps.navigation.getParam('group', {}).key],
 });
 
