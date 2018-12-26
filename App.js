@@ -233,24 +233,7 @@ export default class App extends React.Component {
             ...snapshot.val(),
           },
         }))
-      });
-      firebaseDB.on(`/messages/groups/${groupKey}/`, 'child_changed', (snapshot) => {
-        // console.log(`child_changed  ===>  /messages/groups/${groupKey}/`, snapshot.key)
-        store.dispatch(actions.groupMessageChanged({
-          groupKey, 
-          message: {
-            key: snapshot.key,
-            ...snapshot.val(),
-          },
-        }));
-      });
-      firebaseDB.on(`/messages/groups/${groupKey}/`, 'child_removed', (snapshot) => {
-        // console.log(`child_changed  ===>  /messages/groups/${groupKey}/`, snapshot.key)
-        store.dispatch(actions.groupMessageRemoved({
-          groupKey, 
-          messageKey: snapshot.key,
-        }));
-      });
+      }, gbl.MAX_NUM_MESSAGES);
     }
     
     unsubscribeGroupMessages(groupKey) {

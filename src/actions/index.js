@@ -51,12 +51,6 @@ export const groupMessageAdded = (groupMessage) => ({
   message: groupMessage.message,
 });
 
-export const groupMessageChanged = (groupMessage) => ({
-  type: types.GROUP_MESSAGE_CHANGED,
-  groupKey: groupMessage.groupKey,
-  message: groupMessage.message,
-});
-
 export const groupMessageRemoved = (groupMessage) => ({
   type: types.GROUP_MESSAGE_REMOVED,
   groupKey: groupMessage.groupKey,
