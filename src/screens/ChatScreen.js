@@ -112,10 +112,11 @@ class ChatScreen extends Component {
         onLoadEarlier={this.loadEarlier}
         listViewProps={{
           onEndReached: () => {
-            console.log('>>>>>> Scroll end reached!');
-            if (!this.props.admin) {
-              const { groupInfo, uid, navigation } = this.props;
-              const { key: groupKey} = navigation.getParam('group', {});
+            const { groupInfo, uid, navigation } = this.props;
+            const { key: groupKey} = navigation.getParam('group', {});
+            if (!this.props.admin &&
+                this.props.userGroups[groupKey].lastMessageRead != groupInfo.lastMessageTime) {
+              console.log('Resetting lastMessageRead time');
               firebase.database().ref().update({
                 [`/users/${uid}/groups/${groupKey}/lastMessageRead`]: groupInfo.lastMessageTime,
               })
@@ -137,6 +138,7 @@ const mapStateToProps = (state, ownProps) => ({
   uid: state.info.uid,
   admin: state.info.admin,
   username: state.info.name,
+  userGroups: state.users.find(user => user.key === state.info.uid).groups,
   avatars: state.info.avatars,
   messages: state.groupMessages[ownProps.navigation.getParam('group', {}).key],
   groupInfo: state.groups.find(group => group.key === ownProps.navigation.getParam('group', {}).key),
