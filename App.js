@@ -3,8 +3,9 @@ import { StyleSheet, Text, View } from 'react-native';
 import { Spinner } from 'native-base';
 import firebase from 'firebase';
 import { Font, FileSystem } from "expo";
-import { createStore } from 'redux';
-import { Provider, connect } from 'react-redux';
+import { createStore, applyMiddleware } from 'redux';
+import thunk from 'redux-thunk';
+import { Provider } from 'react-redux';
 
 import { HomeNavigator, WelcomeNavigator, pippo } from './src/navigators';
 import config from './config';
@@ -13,7 +14,7 @@ import rootReducer from './src/reducers';
 import * as actions from './src/actions';
 import * as firebaseDB from './src/lib/firebaseDB';
 
-const store = createStore(rootReducer);
+const store = createStore(rootReducer, applyMiddleware(thunk));
 const DEBUG_STORE = false;
 export default class App extends React.Component {
   constructor() {
@@ -119,7 +120,6 @@ export default class App extends React.Component {
         if (error.code === 'storage/object-not-found') return;
         alert(JSON.stringify(error));
       });
-      
     }
     
     subscribeAdmin(uid) {
@@ -183,6 +183,7 @@ export default class App extends React.Component {
       
       /* Groups and group messages */
       firebaseDB.on(`/users/${uid}`, 'value', (snapshot) => {
+        store.dispatch(actions.userChanged({key: snapshot.key, ...snapshot.val()}))
         prevGroups = groups;
         ({ groups } = snapshot.val());
         if (!groups) groups = {};
@@ -191,33 +192,32 @@ export default class App extends React.Component {
         
         if (groupsAdded.length > 0) {
           groupsAdded.forEach((groupKey) => {
-            this.subscripeGroup(groupKey);
+            this.subscribeGroup(groupKey);
           });
         } else if (groupsRemoved.length > 0) {
           groupsRemoved.forEach((groupKey) => {
-            this.unsubscripeGroup(groupKey);
+            this.unsubscribeGroup(groupKey);
           });
         }
       });
     }  
     
-    subscripeGroup(groupKey) {
-      // console.log('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Subscribing to group', groupKey)
+    subscribeGroup(groupKey) {
+      let firstTime = true;
       /* Group */
       firebaseDB.on(`/groups/${groupKey}/`, 'value', (snapshot) => {
-        // console.log(`value  ===>  /groups/${groupKey}/`, snapshot.key)
         if (snapshot.val()) {
           store.dispatch(actions.groupChanged({key: snapshot.key, ...snapshot.val()}))
-        } else {
-          store.dispatch(actions.groupRemoved(snapshot.key));
+          if (firstTime) {
+            /* Group messages */
+            this.subscribeGroupMessages(groupKey);
+            firstTime = false;
+          }
         }
       });
-      /* Group messages */
-      this.subscribeGroupMessages(groupKey);
     }
     
-    unsubscripeGroup(groupKey) {
-      // console.log('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Unsubscribing from group', groupKey)
+    unsubscribeGroup(groupKey) {
       firebaseDB.unregister(`/groups/${groupKey}/`, 'value');
       store.dispatch(actions.groupRemoved(groupKey));
       this.unsubscribeGroupMessages(groupKey);
@@ -225,7 +225,6 @@ export default class App extends React.Component {
     
     subscribeGroupMessages(groupKey) {
       firebaseDB.on(`/messages/groups/${groupKey}/`, 'child_added', (snapshot) => {
-        // console.log(`child_added  ===>  /messages/groups/${groupKey}/`, snapshot.key)
         store.dispatch(actions.groupMessageAdded({
           groupKey, 
           message: {
@@ -237,7 +236,6 @@ export default class App extends React.Component {
     }
     
     unsubscribeGroupMessages(groupKey) {
-      // console.log('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Unsubscribing from group', groupKey)
       firebaseDB.unregister(`/messages/groups/${groupKey}/`, 'child_added');
       firebaseDB.unregister(`/messages/groups/${groupKey}/`, 'child_changed');
       firebaseDB.unregister(`/messages/groups/${groupKey}/`, 'child_removed');

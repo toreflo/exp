@@ -19,7 +19,7 @@ const users = (state = [], action) => {
       return [...state, user(undefined, action)];
     case types.USER_CHANGED:
       idx = state.findIndex(user => user.key === action.user.key);
-      if (idx === -1) return state;
+      if (idx === -1) return [...state, user(undefined, action)];
       return [...state.slice(0, idx), user(undefined, action), ...state.slice(idx + 1)];
     case types.USER_REMOVED:
       idx = state.findIndex(user => user.key === action.userKey);

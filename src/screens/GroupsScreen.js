@@ -40,6 +40,7 @@ class GroupsScreen extends Component {
     const { key } = firebase.database().ref('/groups/').push();
     firebase.database().ref('/groups/' + key).set({
       name: this.state.newGroupName,
+      lastMessageTime: 0,
     })
       .then(() => this.hideGroupDialog())
       .catch((error) => {
@@ -96,6 +97,10 @@ class GroupsScreen extends Component {
           // dataSource={this.ds.cloneWithRows(this.state.groups)}
           dataSource={this.ds.cloneWithRows(this.props.groups.sort(this.sortGroups))}
           renderRow={(data) => {
+            let unread;
+            if (!this.props.admin) {
+              ({ unread } = this.props.groups.find(g => g.key === data.key));
+            }
             return (
               <Card style={{ borderRadius: 10, overflow: 'hidden' }}>
                 <CardItem
@@ -103,7 +108,7 @@ class GroupsScreen extends Component {
                   onPress={ () => this.goToDetails(data) }
                 >
                   <Body>
-                    <Text> {data.name} </Text>
+                    <Text> {data.name} ({unread})</Text>
                   </Body>
                 </CardItem>
                 {getAdminSection(data)}

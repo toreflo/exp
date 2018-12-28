@@ -42,19 +42,24 @@ class ChatScreen extends Component {
   sendMessage(messages = []) {
     const { key: groupKey } = this.props.navigation.getParam('group');
     let minTime;
+    let maxTime;
     messages.forEach((message) => {
       const { key } = firebase.database().ref(`/messages/groups/${groupKey}`).push();
       const createdAt = message.createdAt.getTime();
       if ((minTime === undefined) || (createdAt < minTime)) minTime = createdAt;
-      firebase.database().ref(`/messages/groups/${groupKey}/${key}`).set({
-        ...message,
-        createdAt,
-      })
-        .then(() => {
-          if (this.props.groupInfo.firstMessageTime) return Promise.resolve();
-          return firebase.database().ref(`/groups/${groupKey}/`).update({firstMessageTime: minTime});
-        })
-        .catch((error) => alert(`${error.name}: ${error.message}`));   
+      if ((maxTime === undefined) || (createdAt > maxTime)) maxTime = createdAt;
+      const updates = {
+        [`/messages/groups/${groupKey}/${key}`]: {
+          ...message,
+          createdAt,
+        },
+        [`/groups/${groupKey}/lastMessageTime`]: maxTime,
+      };
+      if (!this.props.groupInfo.firstMessageTime) {
+        updates[`/groups/${groupKey}/firstMessageTime`] = minTime;
+      }
+      firebase.database().ref().update(updates)
+        .catch((error) => alert(`${error.name}: ${error.message}`));
     });
   }
 
@@ -105,6 +110,19 @@ class ChatScreen extends Component {
         isAnimated
         loadEarlier={showLoadEarlier}
         onLoadEarlier={this.loadEarlier}
+        listViewProps={{
+          onEndReached: () => {
+            console.log('>>>>>> Scroll end reached!');
+            if (!this.props.admin) {
+              const { groupInfo, uid, navigation } = this.props;
+              const { key: groupKey} = navigation.getParam('group', {});
+              firebase.database().ref().update({
+                [`/users/${uid}/groups/${groupKey}/lastMessageRead`]: groupInfo.lastMessageTime,
+              })
+                .catch((error) => alert(`${error.name}: ${error.message}`));
+            }
+          },
+        }}
         // keyboardShouldPersistTaps={'never'}
         renderInputToolbar={this.props.admin ? undefined : () => null}
         user={{

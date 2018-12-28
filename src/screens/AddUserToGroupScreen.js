@@ -36,7 +36,9 @@ class AddUserToGroupScreen extends Component {
     rowMap[`${secId}${rowId}`].props.closeRow();
 
     const updates = {};
-    updates[`/users/${user.key}/groups/${groupKey}`] = true;
+    updates[`/users/${user.key}/groups/${groupKey}`] = {
+      lastMessageRead: 0,
+    };
     updates[`/groups/${groupKey}/users/${user.key}`] = true;
   
     firebase.database().ref().update(updates)
