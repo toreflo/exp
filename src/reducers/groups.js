@@ -1,19 +1,10 @@
 import * as types from '../actions/actionTypes';
 
 const group = (state = {}, action) => {
-  let newState;
   switch (action.type) {
     case types.GROUP_ADDED:
-      return {...action.group, unread: 0};
     case types.GROUP_CHANGED:
-      newState = {
-        ...state,
-        ...action.group,
-      };
-      if (newState.unread === undefined) newState.unread = 0;
-      return newState;
-    case types.UPDATE_UNREAD_MESSAGES:
-      return {...state, unread: action.count}
+      return {...action.group};
     default:
       return state
   }
@@ -34,10 +25,6 @@ const groups = (state = [], action) => {
       idx = state.findIndex(group => group.key === action.groupKey);
       if (idx === -1) return state;
       return [...state.slice(0, idx), ...state.slice(idx + 1)];
-    case types.UPDATE_UNREAD_MESSAGES:
-      idx = state.findIndex(group => group.key === action.groupKey);
-      if (idx === -1) return state;
-      return [...state.slice(0, idx), group(state[idx], action), ...state.slice(idx + 1)];
     default:
       return state
   }

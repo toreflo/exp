@@ -38,6 +38,7 @@ class AddUserToGroupScreen extends Component {
     const updates = {};
     updates[`/users/${user.key}/groups/${groupKey}`] = {
       lastMessageRead: 0,
+      unread: 0,
     };
     updates[`/groups/${groupKey}/users/${user.key}`] = true;
   
