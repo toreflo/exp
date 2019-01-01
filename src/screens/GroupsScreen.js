@@ -14,10 +14,11 @@ import {
   Left,
   Right,
 } from 'native-base';
-import 'moment/locale/it';
 import firebase from 'firebase';
 import Dialog from 'react-native-dialog';
 import { connect } from 'react-redux';
+import moment from 'moment';
+import 'moment/locale/it';
 
 import * as gbl from '../gbl';
 
@@ -97,9 +98,10 @@ class GroupsScreen extends Component {
           // dataSource={this.ds.cloneWithRows(this.state.groups)}
           dataSource={this.ds.cloneWithRows(this.props.groups.sort(this.sortGroups))}
           renderRow={(data) => {
-            let unread;
+            let info = null;
             if (!this.props.admin) {
-              ({ unread } = this.props.groups.find(g => g.key === data.key));
+              const userInfo = this.props.userGroups[data.key];
+              info = <Text> {`${moment.unix(userInfo.lastMessageRead/1000).format('LLL')} (${userInfo.unread})`} </Text>
             }
             return (
               <Card style={{ borderRadius: 10, overflow: 'hidden' }}>
@@ -108,7 +110,8 @@ class GroupsScreen extends Component {
                   onPress={ () => this.goToDetails(data) }
                 >
                   <Body>
-                    <Text> {data.name} ({unread})</Text>
+                    <Text> {data.name} </Text>
+                    {info}
                   </Body>
                 </CardItem>
                 {getAdminSection(data)}
@@ -160,6 +163,7 @@ class GroupsScreen extends Component {
 const mapStateToProps = (state) => ({
   admin: state.info.admin,
   groups: state.groups,
+  userGroups: state.info.admin ? undefined : state.users.find(user => user.key === state.info.uid).groups,
 });
 
 export default connect(mapStateToProps)(GroupsScreen);

@@ -112,6 +112,8 @@ class ChatScreen extends Component {
         onLoadEarlier={this.loadEarlier}
         listViewProps={{
           onEndReached: () => {
+            if (!this.props.admin) console.log('Into onEndReached');
+
             const { groupInfo, uid, navigation } = this.props;
             const { key: groupKey} = navigation.getParam('group', {});
             if (!this.props.admin &&
@@ -119,6 +121,7 @@ class ChatScreen extends Component {
               console.log('Resetting lastMessageRead time');
               firebase.database().ref().update({
                 [`/users/${uid}/groups/${groupKey}/lastMessageRead`]: groupInfo.lastMessageTime,
+                [`/users/${uid}/groups/${groupKey}/unread`]: 0,
               })
                 .catch((error) => alert(`${error.name}: ${error.message}`));
             }
@@ -138,7 +141,7 @@ const mapStateToProps = (state, ownProps) => ({
   uid: state.info.uid,
   admin: state.info.admin,
   username: state.info.name,
-  userGroups: state.users.find(user => user.key === state.info.uid).groups,
+  userGroups: state.info.admin ? undefined : state.users.find(user => user.key === state.info.uid).groups,
   avatars: state.info.avatars,
   messages: state.groupMessages[ownProps.navigation.getParam('group', {}).key],
   groupInfo: state.groups.find(group => group.key === ownProps.navigation.getParam('group', {}).key),
