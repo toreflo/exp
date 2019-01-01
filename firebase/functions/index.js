@@ -75,3 +75,42 @@ exports.httpRequests = functions.https.onRequest((req, res) => {
   if (req.body.type === 'createUser') return createUser(req, res);
   if (req.body.type === 'deleteUser') return deleteUser(req, res);
 });
+
+exports.newGroupMessage = functions.database.ref('/messages/groups/{groupKey}/{messageKey}')
+  .onCreate((snapshot, context) => {
+    const message = snapshot.val();
+    const { groupKey } = context.params;
+    // console.log('New message on', context.params.groupKey, context.params.messageKey, message);
+    return admin.database().ref(`/groups/${groupKey}/users`).once('value')
+      .then((groupUsers) => {
+        const promises = [];
+        groupUsers.forEach((user) => {
+          const { key: userKey} = user;
+          promises.push(admin.database().ref(`/users/${userKey}/`).once('value'));
+          // console.log('1) >>>', userKey)
+        })
+        return Promise.all(promises);
+      })
+      .then((users) => {
+        const updates = {};
+        let doUpdate = false;
+        users.forEach((userSnapshot) => {
+          const user = userSnapshot.val();
+          // console.log('2) >>>', userSnapshot.key, user.name, user.groups)
+          if (!user.groups) return;
+
+          const groupMessageInfo = user.groups[groupKey];
+          // console.log('3) >>>', userSnapshot.key, message.createdAt, groupMessageInfo.lastMessageRead)
+          if (message.createdAt <= groupMessageInfo.lastMessageRead) return;
+
+          // console.log('4) >>>', userSnapshot.key, groupMessageInfo.unread)
+          doUpdate = true;
+          updates[`/users/${userSnapshot.key}/groups/${groupKey}/unread`] = groupMessageInfo.unread + 1; 
+        });
+        // console.log('5) >>>', updates)
+        if (!doUpdate) return null;
+        
+        return admin.database().ref().update(updates);
+      })
+      // .then(() => console.log('END'))
+  });
