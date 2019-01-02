@@ -32,6 +32,12 @@ class ChatScreen extends Component {
     super(props);
     this.sendMessage = this.sendMessage.bind(this);
     this.loadEarlier = this.loadEarlier.bind(this);
+    this.onViewableItemsChanged = this.onViewableItemsChanged.bind(this);
+
+    this.viewabilityConfig = {
+      // waitForInteraction: true,
+      itemVisiblePercentThreshold: 100,
+    };
   }
 
   componentDidMount() {
@@ -78,6 +84,29 @@ class ChatScreen extends Component {
     }, num + gbl.MAX_NUM_MESSAGES);
   }
   
+  onViewableItemsChanged(info) {
+    const { uid, navigation } = this.props;
+    const { key: groupKey} = navigation.getParam('group', {});
+    // console.log('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
+    // console.log(info.viewableItems.map(item => `${item.item._id} (${item.item.text})`))
+    // console.log('--------------------------------')
+    // console.log(info.changed.map(item => `${item.item.text} (${item.isViewable})`))
+    if (this.props.messages.length > 0) {
+      const lastMessage = this.props.messages[this.props.messages.length - 1];
+      if (info.viewableItems.find(item => item.item._id === lastMessage.key)) {
+        if (this.props.userGroups[groupKey].lastMessageRead == lastMessage.createdAt) {
+          return;
+        }
+        console.log('Resetting unread messages for group', groupKey);
+        firebase.database().ref().update({
+          [`/users/${uid}/groups/${groupKey}/lastMessageRead`]: lastMessage.createdAt,
+          [`/users/${uid}/groups/${groupKey}/unread`]: 0,
+        })
+          .catch((error) => alert(`${error.name}: ${error.message}`));
+      }
+    }
+  }
+
   render() {
     let messages = [];
     let avatar = null;
@@ -103,6 +132,7 @@ class ChatScreen extends Component {
       }
     }
     return (
+      <View style={{flex: 1}} >
       <GiftedChat
         messages={messages}
         onSend={newMessages => this.sendMessage(newMessages)}
@@ -110,22 +140,11 @@ class ChatScreen extends Component {
         isAnimated
         loadEarlier={showLoadEarlier}
         onLoadEarlier={this.loadEarlier}
-        listViewProps={{
-          onEndReached: () => {
-            if (!this.props.admin) console.log('Into onEndReached');
-
-            const { groupInfo, uid, navigation } = this.props;
-            const { key: groupKey} = navigation.getParam('group', {});
-            if (!this.props.admin &&
-                this.props.userGroups[groupKey].lastMessageRead != groupInfo.lastMessageTime) {
-              console.log('Resetting lastMessageRead time');
-              firebase.database().ref().update({
-                [`/users/${uid}/groups/${groupKey}/lastMessageRead`]: groupInfo.lastMessageTime,
-                [`/users/${uid}/groups/${groupKey}/unread`]: 0,
-              })
-                .catch((error) => alert(`${error.name}: ${error.message}`));
-            }
-          },
+        listViewProps={this.props.admin ? null : {
+          viewabilityConfig: this.viewabilityConfig,
+          onViewableItemsChanged: this.onViewableItemsChanged,
+          onEndReachedThreshold: 0,
+          onEndReached: () => {},
         }}
         // keyboardShouldPersistTaps={'never'}
         renderInputToolbar={this.props.admin ? undefined : () => null}
@@ -134,6 +153,7 @@ class ChatScreen extends Component {
           name: this.props.username,
         }}
       />
+      </View>
     );
   }
 }

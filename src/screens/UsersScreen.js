@@ -107,7 +107,7 @@ class UsersScreen extends Component {
         renderRow={(data) => (
           <ListItem onPress={() => this.props.navigation.navigate(
             'UserDetailsScreen',
-            { user: data },
+            { userKey: data.key },
             )}
           >
             <Text> {`${data.name} ${data.surname}`} </Text>

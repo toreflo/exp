@@ -5,24 +5,28 @@ import {
   StyleSheet
 } from "react-native";
 import { connect } from 'react-redux';
+import moment from 'moment';
+import 'moment/locale/it';
 
 class UserDetailsScreen extends Component {
 
   componentDidMount() {
-    const { name, surname } = this.props.navigation.getParam('user');
+    const key = this.props.navigation.getParam('userKey');
+    const { name, surname } = this.props.users.find(user => user.key === key);
     this.props.navigation.setParams({title: `${name} ${surname}`});
   }
 
   render() {
     let groupList = null;
-    const { name, surname, email, groups } = this.props.navigation.getParam('user');
-
+    const key = this.props.navigation.getParam('userKey');
+    const { name, surname, email, groups } = this.props.users.find(user => user.key === key);
     if (groups) {
       groupList = Object.keys(groups).map((groupKey) => {
         const group = this.props.groups.find(g => g.key === groupKey);
+        const { unread, lastMessageRead } = groups[groupKey];
         return (
           <Text key={groupKey}>
-            {group ? group.name : `${groupKey} (not found!)`}
+            {`${group.name} (unread: ${unread}, lastRead: ${moment.unix(lastMessageRead/1000).format('LLL')})`}
           </Text>
       )});
     }
@@ -41,6 +45,7 @@ class UserDetailsScreen extends Component {
 
 const mapStateToProps = (state) => ({
   groups: state.groups,
+  users: state.users,
 });
 
 export default connect(mapStateToProps)(UserDetailsScreen);
