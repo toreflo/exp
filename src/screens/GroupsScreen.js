@@ -13,6 +13,7 @@ import {
   Button,
   Left,
   Right,
+  Badge,
 } from 'native-base';
 import firebase from 'firebase';
 import Dialog from 'react-native-dialog';
@@ -99,9 +100,11 @@ class GroupsScreen extends Component {
           dataSource={this.ds.cloneWithRows(this.props.groups.sort(this.sortGroups))}
           renderRow={(data) => {
             let info = null;
+            let right = null;
             if (!this.props.admin) {
               const userInfo = this.props.userGroups[data.key];
-              info = <Text> {`${moment.unix(userInfo.lastMessageRead/1000).format('LLL')} (${userInfo.unread})`} </Text>
+              info = <Text> {`${moment.unix(userInfo.lastMessageRead/1000).format('LLL')}`} </Text>;
+              if (userInfo.unread) right = (<Right><Badge><Text>{userInfo.unread}</Text></Badge></Right>);
             }
             return (
               <Card style={{ borderRadius: 10, overflow: 'hidden' }}>
@@ -113,6 +116,7 @@ class GroupsScreen extends Component {
                     <Text> {data.name} </Text>
                     {info}
                   </Body>
+                  {right}
                 </CardItem>
                 {getAdminSection(data)}
               </Card>
