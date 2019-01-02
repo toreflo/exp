@@ -11,51 +11,77 @@ import GroupsNavigator from './GroupsNavigator';
 import MeScreen from '../screens/MeScreen';
 import { connect } from 'react-redux';
 
-const getIcon = (icon, number) => (
-  number ? 
-  <View style={{ flexDirection: "row" }}>
-    {icon}
-    <View>
-      <Badge style={{ position: "absolute", top: -12, left: -25 }}>
-        <Text>{number}</Text>
-      </Badge>
-    </View>
-  </View> :
-  icon
-)
-class HomeTabNavigator extends React.Component {
+class iconWithBadge extends React.Component {
   render() {
-    let unread = 0;
+    const icon = <Icon type={this.props.type} name={this.props.name} />;
+    return (
+      this.props.number ? 
+      <View style={{ flexDirection: "row" }}>
+        {icon}
+        <View>
+          <Badge style={{ position: "absolute", top: -12, left: -25 }}>
+            <Text>{this.props.number}</Text>
+          </Badge>
+        </View>
+      </View> :
+      icon
+    );
+  }
+}
+
+const unreadMapStateToProps = (state, ownProps) => {
+  let unread = 0;
+  const user = state.users.find(user => user.key === state.info.uid);
+  if (user && user.groups) {
+    unread = Object.values(user.groups).reduce((count, groupInfo) => (count + groupInfo.unread), 0);
+  }
+  return ({
+    number: unread,
+    type: ownProps.type,
+    name: ownProps.name,
+  });
+};
+
+class HomeTabNavigator extends React.Component {
+  render() {  
+    const icons = {
+      BoardNavigator: { component: Icon, props: { type: 'FontAwesome', name: 'home' } },
+      GroupsNavigator: { component: Icon, props: { type: 'FontAwesome', name: 'wechat' } },
+      UsersNavigator: { component: Icon, props: { type: 'FontAwesome', name: 'group' } },
+      MeScreen: { component: Icon, props: { type: 'FontAwesome', name: 'user' } },
+    };
+
     if (!this.props.admin) {
-      const user = this.props.users.find(user => user.key === this.props.uid);
-      if (user && user.groups) {
-        unread = Object.values(user.groups).reduce((count, groupInfo) => (count + groupInfo.unread), 0);
-      }
+      icons.GroupsNavigator = {
+        component: connect(unreadMapStateToProps)(iconWithBadge),
+        props: icons.GroupsNavigator.props,
+      };
     }
+
     let index = 0;
     const screens = {
       BoardNavigator: {
         component: BoardNavigator,
         index: index++,
-        icon: getIcon(<Icon type="FontAwesome" name="home" />, 0),
+        icon: icons.BoardNavigator,
       },
       GroupsNavigator: {
         component: GroupsNavigator,
         index: index++,
-        icon: getIcon(<Icon type="FontAwesome" name="envelope" />, unread),
+        icon: icons.GroupsNavigator,
       },
     };
     if (this.props.admin) {
       screens.UsersNavigator = {
         component: UsersNavigator,
         index: index++,
-        icon: <Icon type="FontAwesome" name="group" />,
+        icon: icons.UsersNavigator,
       };
     }
     screens.MeScreen = {
       component: MeScreen,
       index: index++,
-      icon: <Icon type="FontAwesome" name="user" />,
+      icon: icons.MeScreen,
     };
     const routes = Object.entries(screens).reduce((params, entry) => {
       const [screen, item] = entry;
@@ -64,18 +90,21 @@ class HomeTabNavigator extends React.Component {
         [screen]: {screen: item.component},
       });
     }, {});
-  
+
     const tabBarComponent = ({ navigation }) => {
-      const tabs = Object.entries(screens).map(([screen, item]) => (
+      const tabs = Object.entries(screens).map(([screen, item]) => {console.log('>>>', item.index, navigation.state.index);return (
         <Button
           key={item.index}
           vertical
           active={navigation.state.index === item.index}
           onPress={() => navigation.navigate(screen)}
         >
-          {item.icon}
+          {React.createElement(
+            item.icon.component,
+            { ...item.icon.props, active: navigation.state.index === item.index },
+          )}
         </Button>
-      ));
+      )});
 
       return (
         <StyleProvider style={getTheme(exp)}>
@@ -87,15 +116,9 @@ class HomeTabNavigator extends React.Component {
         </StyleProvider>      
       );
     }
-    const nav = createBottomTabNavigator(routes, { tabBarComponent, title: 'pippolino' });
+    const nav = createBottomTabNavigator(routes, { tabBarComponent });
     return React.createElement(nav, {});
   }
 }
 
-const mapStateToProps = (state) => ({
-  admin: state.info.admin,
-  uid: state.info.uid,
-  users: state.users,
-});
-
-export default connect(mapStateToProps)(HomeTabNavigator);
+export default HomeTabNavigator;
