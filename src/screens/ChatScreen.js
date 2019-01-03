@@ -24,6 +24,7 @@ import { GiftedChat } from 'react-native-gifted-chat';
 import dismissKeyboard from 'dismissKeyboard';
 
 import * as firebaseDB from '../lib/firebaseDB';
+import * as fileStorage from '../lib/fileStorage';
 import * as actions from '../actions';
 import * as gbl from '../gbl';
 
@@ -33,6 +34,8 @@ class ChatScreen extends Component {
     this.sendMessage = this.sendMessage.bind(this);
     this.loadEarlier = this.loadEarlier.bind(this);
     this.onViewableItemsChanged = this.onViewableItemsChanged.bind(this);
+    this.renderActions = this.renderActions.bind(this);
+    this.upload = this.upload.bind(this);
 
     this.viewabilityConfig = {
       // waitForInteraction: true,
@@ -87,10 +90,6 @@ class ChatScreen extends Component {
   onViewableItemsChanged(info) {
     const { uid, navigation } = this.props;
     const { key: groupKey} = navigation.getParam('group', {});
-    // console.log('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
-    // console.log(info.viewableItems.map(item => `${item.item._id} (${item.item.text})`))
-    // console.log('--------------------------------')
-    // console.log(info.changed.map(item => `${item.item.text} (${item.isViewable})`))
     if (this.props.messages.length > 0) {
       const lastMessage = this.props.messages[this.props.messages.length - 1];
       if (info.viewableItems.find(item => item.item._id === lastMessage.key)) {
@@ -107,19 +106,73 @@ class ChatScreen extends Component {
     }
   }
 
+  upload = async ({ uri }) => {
+    const { key: groupKey } = this.props.navigation.getParam('group');
+    const timeNow = Date.now();
+    const { key } = firebase.database().ref(`/messages/groups/${groupKey}`).push();
+    const message = {
+      _id: key,
+      createdAt: timeNow,
+      image: key,
+      user: {
+        _id: this.props.uid,
+        name: this.props.username,
+      },
+    };
+    const updates = {
+      [`/messages/groups/${groupKey}/${key}`]: message,
+      [`/groups/${groupKey}/lastMessageTime`]: timeNow,
+      [`/images/groups/${groupKey}/${key}`]: timeNow,
+    };
+    if (!this.props.groupInfo.firstMessageTime) {
+      updates[`/groups/${groupKey}/firstMessageTime`] = timeNow;
+    }
+    try {
+      await fileStorage.uploadImageAsync(uri, `/images/groups/${groupKey}/${key}`); 
+      await fileStorage.saveFile(uri, key);
+      await firebase.database().ref().update(updates);
+      alert('Immagine caricata');
+    } catch (error) {
+      alert(`${error.name}: ${error.message}`);
+    }
+  }
+
+  pickFromGallery = async () => {
+    await fileStorage.pickFromGallery({
+      imageManipulator: [{ resize: { width: 140 }}],
+    }, this.upload);
+  }
+
+  renderActions() {
+    return (
+      <View>
+        <Button
+          transparent
+          onPress={this.pickFromGallery}
+        >
+          <Icon type="Ionicons" name="ios-images" />
+        </Button>
+      </View>
+    );
+  }
+
+
   render() {
     let messages = [];
     let avatar = null;
     let showLoadEarlier = false;
+    let imageUri;
     if (this.props.messages) {
       this.props.messages
-        .forEach(message => {
+        .forEach((message) => {
+          if (message.image) imageUri = fileStorage.getFileUri(message.image);
           if (this.props.avatars[message.user._id])
             avatar = this.props.avatars[message.user._id];
           messages = GiftedChat.append(messages, [{
             _id: message.key,
             createdAt: new Date(message.createdAt),
             text: message.text,
+            image: message.image ? imageUri : undefined,
             user: {
               ...message.user,
               avatar,
@@ -148,6 +201,7 @@ class ChatScreen extends Component {
         }}
         // keyboardShouldPersistTaps={'never'}
         renderInputToolbar={this.props.admin ? undefined : () => null}
+        renderActions={this.renderActions}
         user={{
           _id: this.props.uid,
           name: this.props.username,
@@ -157,6 +211,7 @@ class ChatScreen extends Component {
     );
   }
 }
+
 const mapStateToProps = (state, ownProps) => ({
   uid: state.info.uid,
   admin: state.info.admin,

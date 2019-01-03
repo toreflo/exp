@@ -1,65 +1,38 @@
 import React, { Component } from "react";
 import { Image } from "react-native";
 import { Button, Text, Container, Content, Header } from 'native-base';
-import { ImagePicker, ImageManipulator, Permissions } from 'expo';
 import { connect } from 'react-redux';
 import firebase from 'firebase';
 
 import * as actions from '../actions';
+import * as fileStorage from '../lib/fileStorage';
 
 const IMAGE_DIM = 140;
 
 class MeScreen extends Component {
+  constructor(props) {
+    super(props);
 
-  pickFromGallery = async () => {
-    const permissions = Permissions.CAMERA_ROLL;
-    try {
-      const { status } = await Permissions.askAsync(permissions);
-
-      if (status === 'granted') {
-        const image = await ImagePicker.launchImageLibraryAsync({
-          mediaTypes: 'Images',
-          allowsEditing: true,
-          aspect: [1, 1],
-        })
-        if (!image.cancelled) {
-          const resizedImage = await ImageManipulator.manipulateAsync(
-            image.uri,
-            [{ resize: { width: IMAGE_DIM }}],
-          );
-          await this.uploadImageAsync(resizedImage.uri); 
-          this.props.dispatch(actions.updateAvatar(this.props.uid, resizedImage.uri));
-          alert('Immagine caricata')
-        }
-      }  
-    } catch (error) {
-      console.log(error)
-      alert(`${error.name}: ${error.message}`)
-    }
+    this.upload = this.upload.bind(this);
   }
 
-  uploadImageAsync = async (uri) => {
-    // Why are we using XMLHttpRequest? See:
-    // https://github.com/expo/expo/issues/2402#issuecomment-443726662
-    const blob = await new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      xhr.onload = function() {
-        resolve(xhr.response);
-      };
-      xhr.onerror = function(e) {
-        console.log(e);
-        reject(new TypeError('Network request failed'));
-      };
-      xhr.responseType = 'blob';
-      xhr.open('GET', uri, true);
-      xhr.send(null);
-    });
-  
-    const name = `${this.props.uid}`;
-    var ref = firebase.storage().ref().child('/avatars/' + name);
-    await ref.put(blob);
+  upload = async ({ uri }) => {
+    await fileStorage.uploadImageAsync(uri, `/avatars/${this.props.uid}`); 
+    this.props.dispatch(actions.updateAvatar(this.props.uid, uri));
+    alert('Immagine caricata');
+  }
 
-    blob.close();
+  pickFromGallery = async () => {
+    await fileStorage.pickFromGallery(
+      {
+        imagePicker: {
+          allowsEditing: true,
+          aspect: [1, 1],
+        },
+        imageManipulator: [{ resize: { width: IMAGE_DIM }}],
+      },
+      this.upload,
+    )
   }
 
   render() {

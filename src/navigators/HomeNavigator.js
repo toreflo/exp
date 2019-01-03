@@ -92,7 +92,7 @@ class HomeTabNavigator extends React.Component {
     }, {});
 
     const tabBarComponent = ({ navigation }) => {
-      const tabs = Object.entries(screens).map(([screen, item]) => {console.log('>>>', item.index, navigation.state.index);return (
+      const tabs = Object.entries(screens).map(([screen, item]) => (
         <Button
           key={item.index}
           vertical
@@ -104,7 +104,7 @@ class HomeTabNavigator extends React.Component {
             { ...item.icon.props, active: navigation.state.index === item.index },
           )}
         </Button>
-      )});
+      ));
 
       return (
         <StyleProvider style={getTheme(exp)}>

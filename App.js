@@ -13,6 +13,7 @@ import * as gbl from './src/gbl';
 import rootReducer from './src/reducers';
 import * as actions from './src/actions';
 import * as firebaseDB from './src/lib/firebaseDB';
+import * as fileStorage from './src/lib/fileStorage';
 
 const store = createStore(rootReducer, applyMiddleware(thunk));
 const DEBUG_STORE = false;
@@ -91,36 +92,14 @@ export default class App extends React.Component {
     this.authRemoveSubscription();
   }
   
-  downloadFile(uid, ref, outfile, localInfo) {
-    ref.getDownloadURL()
-    .then((url) => FileSystem.downloadAsync(url, outfile))
-    .then(({uri}) => {
-      console.log('File', outfile, 'downloaded (local exists:', localInfo.exists, ')');
-      store.dispatch(actions.updateAvatar(uid, uri));
-    })
-    .catch((error) => alert(JSON.stringify(error)));
-  }
-  
   getAvatar(uid) {
-    console.log('Getting', uid, 'avatar')
-    const ref = firebase.storage().ref().child('/avatars/' + uid);
-    const filename = FileSystem.documentDirectory + uid + '.jpeg';
-    
-    Promise.all([
-      FileSystem.getInfoAsync(filename),
-      ref.getMetadata(),
-    ])
-    .then(([localInfo, remoteInfo]) => {
-      if (!localInfo.exists || 
-        (new Date(remoteInfo.timeCreated).getTime()/1000 > localInfo.modificationTime)) {
-          this.downloadFile(uid, ref, filename, localInfo);
-        } else store.dispatch(actions.updateAvatar(uid, filename));
-      })
+    fileStorage.downloadFile('/avatars/', uid)
+      .then((filename) => store.dispatch(actions.updateAvatar(uid, filename)))
       .catch((error) => {
         if (error.code === 'storage/object-not-found') return;
-        alert(JSON.stringify(error));
+        alert(error);
       });
-    }
+  }
     
     subscribeAdmin(uid) {
       firebaseDB.once(`/admins/${uid}`, 'value', (snapshot) => {
@@ -224,6 +203,7 @@ export default class App extends React.Component {
     }
     
     subscribeGroupMessages(groupKey) {
+      /* Messages */
       firebaseDB.on(`/messages/groups/${groupKey}/`, 'child_added', (snapshot) => {
         store.dispatch(actions.groupMessageAdded({
           groupKey, 
@@ -233,12 +213,20 @@ export default class App extends React.Component {
           },
         }))
       }, gbl.MAX_NUM_MESSAGES);
+
+      /* Images */
+      firebaseDB.on(`/images/groups/${groupKey}/`, 'child_added', (snapshot) => {
+        fileStorage.downloadFile(`/images/groups/${groupKey}`, snapshot.key, false)
+          .catch((error) => {
+            if (error.code === 'storage/object-not-found') return;
+            alert(error);
+          });  
+      });
     }
     
     unsubscribeGroupMessages(groupKey) {
       firebaseDB.unregister(`/messages/groups/${groupKey}/`, 'child_added');
-      firebaseDB.unregister(`/messages/groups/${groupKey}/`, 'child_changed');
-      firebaseDB.unregister(`/messages/groups/${groupKey}/`, 'child_removed');
+      firebaseDB.unregister(`/images/groups/${groupKey}/`, 'child_added');
       store.dispatch(actions.groupMessageUnsubscribed(groupKey));
     }
     
