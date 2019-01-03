@@ -131,7 +131,7 @@ class ChatScreen extends Component {
       console.log('>>> uploadImageAsync')
       await fileStorage.uploadImageAsync(uri, `/images/groups/${groupKey}/${key}`); 
       console.log('>>> saveFile')
-      await fileStorage.saveFile(uri, key);
+      await fileStorage.saveFile(uri, 'image', key);
       console.log('>>> database')
       await firebase.database().ref().update(updates);
       alert('Immagine caricata');

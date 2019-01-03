@@ -51,10 +51,10 @@ export const pickFromGallery = async (options, callbackAsync) => {
 }
 
 
-export const downloadFile = (firebasePath, name, checkTime = true) => new Promise((resolve, reject) => {
+export const downloadFile = (type, firebasePath, name, checkTime = true) => new Promise((resolve, reject) => {
   const ref = firebase.storage().ref().child(firebasePath + '/' + name);
-  const filename = getFileUri(name);
-  
+  const filename = getFileUri(type, name);
+
   Promise.all([FileSystem.getInfoAsync(filename), ref.getMetadata()])
     .then(([localInfo, remoteInfo]) => {
       const remoteTime = new Date(remoteInfo.timeCreated).getTime()/1000
@@ -62,19 +62,32 @@ export const downloadFile = (firebasePath, name, checkTime = true) => new Promis
         console.log('File', firebasePath + '/' + name, 'is up to date');
         return resolve(filename);
       }
-      return ref.getDownloadURL();
-    })
-    .then((url) => FileSystem.downloadAsync(url, filename))
-    .then(({ uri }) => {
-      console.log('File', firebasePath + '/' + name, 'downloaded in', FileSystem.documentDirectory);
-      return resolve(uri);
+      ref.getDownloadURL()
+        .then((url) => FileSystem.downloadAsync(url, filename))
+        .then(({ uri }) => {
+          console.log('File', firebasePath + '/' + name, 'downloaded in', filename);
+          return resolve(uri);
+        })
+        .catch(error => reject(error));
     })
     .catch(error => reject(error));
 })
 
-export const getFileUri = (name) => FileSystem.documentDirectory + name + '.jpeg'
-
-export const saveFile = async (uri, name) => {
-  const to = getFileUri(name);
+export const saveFile = async (uri, type, name) => {
+  const to = getFileUri(type, name);
   await FileSystem.copyAsync({ from: uri, to, });
 }
+
+export const mkdirIfNotExists = async (type) => {
+  const dir = FileSystem.documentDirectory + type + 's';
+  info = await FileSystem.getInfoAsync(dir);
+  if (!info.exists) {
+    await FileSystem.makeDirectoryAsync(dir);
+  }
+}
+
+const getFileUri = (type, name) => {
+  const dir = FileSystem.documentDirectory + type + 's';
+  return dir + '/' + name + '.jpeg';
+}
+

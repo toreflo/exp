@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Spinner } from 'native-base';
 import firebase from 'firebase';
-import { Font, FileSystem } from "expo";
+import { Font } from "expo";
 import { createStore, applyMiddleware } from 'redux';
 import thunk from 'redux-thunk';
 import { Provider } from 'react-redux';
@@ -31,6 +31,8 @@ export default class App extends React.Component {
       Roboto: require("native-base/Fonts/Roboto.ttf"),
       Roboto_medium: require("native-base/Fonts/Roboto_medium.ttf")
     });
+    await fileStorage.mkdirIfNotExists('avatar');
+    await fileStorage.mkdirIfNotExists('image');
   }
   
   /**
@@ -93,7 +95,7 @@ export default class App extends React.Component {
   }
   
   getAvatar(uid) {
-    fileStorage.downloadFile('/avatars/', uid)
+    fileStorage.downloadFile('avatar', '/avatars/', uid)
       .then((filename) => store.dispatch(actions.updateAvatar(uid, filename)))
       .catch((error) => {
         if (error.code === 'storage/object-not-found') return;
@@ -216,7 +218,7 @@ export default class App extends React.Component {
 
       /* Images */
       firebaseDB.on(`/images/groups/${groupKey}/`, 'child_added', (snapshot) => {
-        fileStorage.downloadFile(`/images/groups/${groupKey}`, snapshot.key, false)
+        fileStorage.downloadFile('image', `/images/groups/${groupKey}`, snapshot.key, false)
           .then((filename) => store.dispatch(actions.imageAdded(groupKey, snapshot.key, filename)))
           .catch((error) => {
             if (error.code === 'storage/object-not-found') return;

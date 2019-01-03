@@ -72,24 +72,26 @@ const deleteUser = (req, res) => {
 }
 
 const deleteGroupImages = (groupKey, start) => new Promise((resolve, reject) => {
+  let deleteCount = 0;
   admin.database().ref(`/images/groups/${groupKey}`).once('value')
     .then((images) => {
       const updates = {};
       const promises = [];
-      let doDelete = false;
       images.forEach((image) => {
         if (image.val() < start) {
-          doDelete = true;
+          deleteCount++;
           const path = `/images/groups/${groupKey}/${image.key}`;
           updates[path] = null;
           promises.push(admin.storage().bucket().file(path).delete());
         };
       });
-      if (!doDelete) return resolve();
+      if (deleteCount === 0) return resolve(0);
+
       promises.push(admin.database().ref().update(updates))
-      return Promise.all(promises);
+      Promise.all(promises)
+        .then(() => resolve(deleteCount))
+        .catch(error => reject(error));
     })
-    .then(() => resolve())
     .catch(error => reject(error));
 })
 
@@ -113,9 +115,11 @@ const deleteOldImages =  (req, res) => {
       })
       return Promise.all(promises);
     })
-    .then(() => res.send({
-      message: `Old images deleted!`
-    }))
+    .then((count) => {
+      res.send({
+        message: `Done (deleted: ${count.reduce((cnt, item) => cnt + item, 0)})`
+      });
+    })
     .catch((error) => res.status(500).send({
       error: true,
       message: error.message,
@@ -133,14 +137,12 @@ exports.newGroupMessage = functions.database.ref('/messages/groups/{groupKey}/{m
   .onCreate((snapshot, context) => {
     const message = snapshot.val();
     const { groupKey } = context.params;
-    // console.log('New message on', context.params.groupKey, context.params.messageKey, message);
     return admin.database().ref(`/groups/${groupKey}/users`).once('value')
       .then((groupUsers) => {
         const promises = [];
         groupUsers.forEach((user) => {
           const { key: userKey} = user;
           promises.push(admin.database().ref(`/users/${userKey}/`).once('value'));
-          // console.log('1) >>>', userKey)
         })
         return Promise.all(promises);
       })
@@ -149,21 +151,16 @@ exports.newGroupMessage = functions.database.ref('/messages/groups/{groupKey}/{m
         let doUpdate = false;
         users.forEach((userSnapshot) => {
           const user = userSnapshot.val();
-          // console.log('2) >>>', userSnapshot.key, user.name, user.groups)
           if (!user.groups) return;
 
           const groupMessageInfo = user.groups[groupKey];
-          // console.log('3) >>>', userSnapshot.key, message.createdAt, groupMessageInfo.lastMessageRead)
           if (message.createdAt <= groupMessageInfo.lastMessageRead) return;
 
-          // console.log('4) >>>', userSnapshot.key, groupMessageInfo.unread)
           doUpdate = true;
           updates[`/users/${userSnapshot.key}/groups/${groupKey}/unread`] = groupMessageInfo.unread + 1; 
         });
-        // console.log('5) >>>', updates)
         if (!doUpdate) return null;
         
         return admin.database().ref().update(updates);
       })
-      // .then(() => console.log('END'))
   });

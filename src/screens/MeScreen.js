@@ -56,7 +56,7 @@ class MeScreen extends Component {
         .then((response) => response.json())
         .then((responseJson) => {
           if (responseJson.error) alert(responseJson.message);
-          console.log(responseJson.message)
+          else console.log('cleanOldImages', responseJson.message)
         })
         .catch((error) => alert(`${error.name}: ${error.message}`));
     }
