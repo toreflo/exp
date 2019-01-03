@@ -162,16 +162,25 @@ class ChatScreen extends Component {
     let avatar = null;
     let showLoadEarlier = false;
     let imageUri;
+    let text;
+    const { images, avatars, } = this.props;
     if (this.props.messages) {
       this.props.messages
         .forEach((message) => {
-          if (message.image) imageUri = fileStorage.getFileUri(message.image);
-          if (this.props.avatars[message.user._id])
-            avatar = this.props.avatars[message.user._id];
+          imageUri = undefined;
+          text = undefined;
+          if (message.image && images) {
+            imageUri = images[message.image];
+          }
+          if (message.text) text = message.text;
+          else if (message.image && !imageUri) text = 'Downloading image...';
+
+          if (avatars[message.user._id])
+            avatar = avatars[message.user._id];
           messages = GiftedChat.append(messages, [{
             _id: message.key,
             createdAt: new Date(message.createdAt),
-            text: message.text,
+            text,
             image: message.image ? imageUri : undefined,
             user: {
               ...message.user,
@@ -220,6 +229,7 @@ const mapStateToProps = (state, ownProps) => ({
   avatars: state.info.avatars,
   messages: state.groupMessages[ownProps.navigation.getParam('group', {}).key],
   groupInfo: state.groups.find(group => group.key === ownProps.navigation.getParam('group', {}).key),
+  images: state.images[ownProps.navigation.getParam('group', {}).key],
 });
 
 export default connect(mapStateToProps)(ChatScreen);

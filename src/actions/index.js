@@ -30,6 +30,13 @@ export const groupRemoved = (groupKey) => ({
   groupKey,
 });
 
+export const imageAdded = (groupKey, imageKey, imageUri) => ({
+  type: types.IMAGE_ADDED,
+  groupKey,
+  imageKey,
+  imageUri,
+});
+
 export const boardMessageAdded = (boardMessage) => ({
   type: types.BOARD_MESSAGE_ADDED,
   boardMessage,

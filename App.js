@@ -217,6 +217,7 @@ export default class App extends React.Component {
       /* Images */
       firebaseDB.on(`/images/groups/${groupKey}/`, 'child_added', (snapshot) => {
         fileStorage.downloadFile(`/images/groups/${groupKey}`, snapshot.key, false)
+          .then((filename) => store.dispatch(actions.imageAdded(groupKey, snapshot.key, filename)))
           .catch((error) => {
             if (error.code === 'storage/object-not-found') return;
             alert(error);
