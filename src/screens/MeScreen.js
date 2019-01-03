@@ -6,6 +6,7 @@ import firebase from 'firebase';
 
 import * as actions from '../actions';
 import * as fileStorage from '../lib/fileStorage';
+import config from '../../config';
 
 const IMAGE_DIM = 140;
 
@@ -14,6 +15,7 @@ class MeScreen extends Component {
     super(props);
 
     this.upload = this.upload.bind(this);
+    this.cleanOldImages = this.cleanOldImages.bind(this);
   }
 
   upload = async ({ uri }) => {
@@ -35,27 +37,64 @@ class MeScreen extends Component {
     )
   }
 
+  cleanOldImages() {
+    firebase.auth().currentUser.getIdToken(true)
+      .then((idToken) => fetch(
+        config.httpURL, 
+        {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            type: 'deleteOldImages',
+            idToken,
+            interval: 120,
+          }),
+        }))
+        .then((response) => response.json())
+        .then((responseJson) => {
+          if (responseJson.error) alert(responseJson.message);
+          console.log(responseJson.message)
+        })
+        .catch((error) => alert(`${error.name}: ${error.message}`));
+    }
+
   render() {
+    const adminTools = !this.props.admin ? null : [
+      <Image
+        key="avatar"
+        source={{uri: this.props.avatar}}
+        style={{
+          height: IMAGE_DIM,
+          width: IMAGE_DIM,
+          borderRadius: IMAGE_DIM/2,
+          flex: 1,
+        }}
+      />,
+      <Button
+        key="loadAvatar"
+        small
+        onPress={this.pickFromGallery}
+      >
+        <Text>Carica avatar</Text>
+      </Button>,
+      <Button
+        key="cleanOldImages"
+        small
+        onPress={this.cleanOldImages}
+      >
+        <Text>Cancella vecchie immagini</Text>
+      </Button>
+    ];
+
     return (
       <Container>
         <Header/>
         <Content>
           <Text>{JSON.stringify(firebase.auth().currentUser.email)}</Text>
-          <Image
-            source={{uri: this.props.avatar}}
-            style={{
-              height: IMAGE_DIM,
-              width: IMAGE_DIM,
-              borderRadius: IMAGE_DIM/2,
-              flex: 1,
-            }}
-          />
-          <Button
-            small
-            onPress={this.pickFromGallery}
-          >
-            <Text>Carica avatar</Text>
-          </Button>
+          {adminTools}
           <Button
             small
             onPress={() => {
@@ -75,6 +114,7 @@ class MeScreen extends Component {
 }
 
 const mapStateToProps = (state) => ({
+  admin: state.info.admin,
   uid: state.info.uid,
   avatar: state.info.avatars[state.info.uid],
 });

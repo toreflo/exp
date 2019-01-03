@@ -71,9 +71,62 @@ const deleteUser = (req, res) => {
     }));
 }
 
+const deleteGroupImages = (groupKey, start) => new Promise((resolve, reject) => {
+  admin.database().ref(`/images/groups/${groupKey}`).once('value')
+    .then((images) => {
+      const updates = {};
+      const promises = [];
+      let doDelete = false;
+      images.forEach((image) => {
+        if (image.val() < start) {
+          doDelete = true;
+          const path = `/images/groups/${groupKey}/${image.key}`;
+          updates[path] = null;
+          promises.push(admin.storage().bucket().file(path).delete());
+        };
+      });
+      if (!doDelete) return resolve();
+      promises.push(admin.database().ref().update(updates))
+      return Promise.all(promises);
+    })
+    .then(() => resolve())
+    .catch(error => reject(error));
+})
+
+const deleteOldImages =  (req, res) => {
+  const { idToken, interval } = req.body;
+  const timeStart = Date.now() - (interval * 1000);
+  
+  // admin.database().ref(`/groups`).once('value')
+  admin.auth().verifyIdToken(idToken)
+    .then((decodedToken) => admin.database().ref('/admins/' + decodedToken.uid).once('value'))
+    .then((snapshot) => {
+      if (!snapshot || !snapshot.val() || !snapshot.val().admin) {
+        throw new Error(`Non hai i privilegi per eliminare utenti!`);
+      }
+      return admin.database().ref(`/groups`).once('value');
+    })
+    .then((groups) => {
+      const promises = [];
+      groups.forEach(({ key }) => {
+        promises.push(deleteGroupImages(key, timeStart));
+      })
+      return Promise.all(promises);
+    })
+    .then(() => res.send({
+      message: `Old images deleted!`
+    }))
+    .catch((error) => res.status(500).send({
+      error: true,
+      message: error.message,
+    }));
+}
+
 exports.httpRequests = functions.https.onRequest((req, res) => {
   if (req.body.type === 'createUser') return createUser(req, res);
   if (req.body.type === 'deleteUser') return deleteUser(req, res);
+  if (req.body.type === 'deleteOldImages') return deleteOldImages(req, res);
+  res.status(500).send({ error: true, message: 'Invalid operation type' });
 });
 
 exports.newGroupMessage = functions.database.ref('/messages/groups/{groupKey}/{messageKey}')

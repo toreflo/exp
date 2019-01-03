@@ -128,8 +128,11 @@ class ChatScreen extends Component {
       updates[`/groups/${groupKey}/firstMessageTime`] = timeNow;
     }
     try {
+      console.log('>>> uploadImageAsync')
       await fileStorage.uploadImageAsync(uri, `/images/groups/${groupKey}/${key}`); 
+      console.log('>>> saveFile')
       await fileStorage.saveFile(uri, key);
+      console.log('>>> database')
       await firebase.database().ref().update(updates);
       alert('Immagine caricata');
     } catch (error) {
