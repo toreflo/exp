@@ -142,7 +142,8 @@ class ChatScreen extends Component {
 
   pickFromGallery = async () => {
     await fileStorage.pickFromGallery({
-      imageManipulator: [{ resize: { width: 140 }}],
+      imageManipulatorActions: [{ resize: { width: 900 }}],
+      imageManipulatorSaveOptions: { compress: 0 },
     }, this.upload);
   }
 
@@ -158,7 +159,6 @@ class ChatScreen extends Component {
       </View>
     );
   }
-
 
   render() {
     let messages = [];
@@ -204,6 +204,7 @@ class ChatScreen extends Component {
         locale="it"
         isAnimated
         loadEarlier={showLoadEarlier}
+        // isLoadingEarlier={this.state.isLoadingEarlier}
         onLoadEarlier={this.loadEarlier}
         listViewProps={this.props.admin ? null : {
           viewabilityConfig: this.viewabilityConfig,
@@ -214,6 +215,7 @@ class ChatScreen extends Component {
         // keyboardShouldPersistTaps={'never'}
         renderInputToolbar={this.props.admin ? undefined : () => null}
         renderActions={this.renderActions}
+        // renderMessageImage={this.renderImage}
         user={{
           _id: this.props.uid,
           name: this.props.username,

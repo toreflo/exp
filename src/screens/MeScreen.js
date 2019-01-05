@@ -31,7 +31,7 @@ class MeScreen extends Component {
           allowsEditing: true,
           aspect: [1, 1],
         },
-        imageManipulator: [{ resize: { width: IMAGE_DIM }}],
+        imageManipulatorActions: [{ resize: { width: IMAGE_DIM }}],
       },
       this.upload,
     )

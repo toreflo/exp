@@ -35,10 +35,11 @@ export const pickFromGallery = async (options, callbackAsync) => {
         mediaTypes: 'Images',
       })
       if (!image.cancelled) {
-        if (options.imageManipulator) {
+        if (options.imageManipulatorActions || options.imageManipulatorSaveOptions) {
           image = await ImageManipulator.manipulateAsync(
             image.uri,
-            [...options.imageManipulator],
+            options.imageManipulatorActions,
+            options.imageManipulatorSaveOptions,
           );
         }
         await callbackAsync(image);
