@@ -41,6 +41,8 @@ class ChatScreen extends Component {
       // waitForInteraction: true,
       itemVisiblePercentThreshold: 100,
     };
+
+    this.state = {};
   }
 
   componentDidMount() {
@@ -88,14 +90,14 @@ class ChatScreen extends Component {
   }
   
   onViewableItemsChanged(info) {
-    const { uid, navigation } = this.props;
+    const { uid, navigation, userGroups, messages, images } = this.props;
     const { key: groupKey} = navigation.getParam('group', {});
-    if (this.props.messages.length > 0) {
-      const lastMessage = this.props.messages[this.props.messages.length - 1];
+    if (messages.length > 0) {
+      const lastMessage = messages[messages.length - 1];
       if (info.viewableItems.find(item => item.item._id === lastMessage.key)) {
-        if (this.props.userGroups[groupKey].lastMessageRead == lastMessage.createdAt) {
-          return;
-        }
+        if (userGroups[groupKey].lastMessageRead == lastMessage.createdAt) return;
+        if (lastMessage.image && !images[lastMessage.image]) return;
+        
         console.log('Resetting unread messages for group', groupKey);
         firebase.database().ref().update({
           [`/users/${uid}/groups/${groupKey}/lastMessageRead`]: lastMessage.createdAt,
@@ -128,14 +130,13 @@ class ChatScreen extends Component {
       updates[`/groups/${groupKey}/firstMessageTime`] = timeNow;
     }
     try {
-      console.log('>>> uploadImageAsync')
+      this.setState({ uploading: true });
       await fileStorage.uploadImageAsync(uri, `/images/groups/${groupKey}/${key}`); 
-      console.log('>>> saveFile')
       await fileStorage.saveFile(uri, 'image', key);
-      console.log('>>> database')
       await firebase.database().ref().update(updates);
-      alert('Immagine caricata');
+      this.setState({ uploading: false });
     } catch (error) {
+      this.setState({ uploading: false });
       alert(`${error.name}: ${error.message}`);
     }
   }
@@ -176,8 +177,12 @@ class ChatScreen extends Component {
             imageUri = images[message.image];
           }
           if (message.text) text = message.text;
-          else if (message.image && !imageUri) text = 'Downloading image...';
+          else if (message.image && !imageUri) {
+            if (this.props.admin) return; // Waiting image is available
 
+            text = 'Downloading image...';
+          }
+          
           if (avatars[message.user._id])
             avatar = avatars[message.user._id];
           messages = GiftedChat.append(messages, [{
@@ -191,6 +196,14 @@ class ChatScreen extends Component {
             },
           }]);
         });
+      if (this.state.uploading) {
+        messages = GiftedChat.append(messages, [{
+          _id: 'tempMsgUploading',
+          createdAt: new Date(),
+          text: 'Caricamento immagine in corso...',
+          system: true,
+        }]);
+      }
       if ((this.props.messages.length > 0) && 
           (this.props.messages[0].createdAt > this.props.groupInfo.firstMessageTime)) {
         showLoadEarlier = true;
