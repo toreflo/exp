@@ -134,30 +134,14 @@ export default class App extends React.Component {
       });
       
       /* Board messages */
-      firebaseDB.on('/messages/board/', 'child_added', (snapshot) => {
-        store.dispatch(actions.boardMessageAdded({key: snapshot.key, ...snapshot.val()}))
-      });
-      firebaseDB.on('/messages/board/', 'child_changed', (snapshot) => {
-        store.dispatch(actions.boardMessageChanged({key: snapshot.key, ...snapshot.val()}));
-      });
-      firebaseDB.on('/messages/board/', 'child_removed', (snapshot) => {
-        store.dispatch(actions.boardMessageRemoved(snapshot.key));
-      });
+      this.subscribeBoarMessages();
     }
     
     subscribeUser(uid) {
       store.dispatch(actions.login(false, uid));
       
       /* Board messages */
-      firebaseDB.on('/messages/board/', 'child_added', (snapshot) => {
-        store.dispatch(actions.boardMessageAdded({key: snapshot.key, ...snapshot.val()}))
-      });
-      firebaseDB.on('/messages/board/', 'child_changed', (snapshot) => {
-        store.dispatch(actions.boardMessageChanged({key: snapshot.key, ...snapshot.val()}));
-      });
-      firebaseDB.on('/messages/board/', 'child_removed', (snapshot) => {
-        store.dispatch(actions.boardMessageRemoved(snapshot.key));
-      });    
+      this.subscribeBoarMessages();
       
       let groups = {};
       let prevGroups;
@@ -203,6 +187,33 @@ export default class App extends React.Component {
       store.dispatch(actions.groupRemoved(groupKey));
       this.unsubscribeGroupMessages(groupKey);
     }
+
+    subscribeBoarMessages() {
+      /* Messages */
+      firebaseDB.on('/messages/board/', 'child_added', (snapshot) => {
+        store.dispatch(actions.boardMessageAdded({key: snapshot.key, ...snapshot.val()}))
+      });
+      firebaseDB.on('/messages/board/', 'child_changed', (snapshot) => {
+        store.dispatch(actions.boardMessageChanged({key: snapshot.key, ...snapshot.val()}));
+      });
+      firebaseDB.on('/messages/board/', 'child_removed', (snapshot) => {
+        store.dispatch(actions.boardMessageRemoved(snapshot.key));
+      });
+
+      /* Images */
+      firebaseDB.on(`/images/board/`, 'child_added', (snapshot) => {
+        this.downloadImage(`/images/board/`, snapshot.key, 'board');
+      });
+    }
+
+    downloadImage(path, name, storeFather) {
+      fileStorage.downloadFile('image', path, name, false)
+      .then((filename) => store.dispatch(actions.imageAdded(storeFather, name, filename)))
+      .catch((error) => {
+        if (error.code === 'storage/object-not-found') return;
+        alert(error);
+      });
+    }
     
     subscribeGroupMessages(groupKey) {
       /* Messages */
@@ -218,12 +229,7 @@ export default class App extends React.Component {
 
       /* Images */
       firebaseDB.on(`/images/groups/${groupKey}/`, 'child_added', (snapshot) => {
-        fileStorage.downloadFile('image', `/images/groups/${groupKey}`, snapshot.key, false)
-          .then((filename) => store.dispatch(actions.imageAdded(groupKey, snapshot.key, filename)))
-          .catch((error) => {
-            if (error.code === 'storage/object-not-found') return;
-            alert(error);
-          });  
+        this.downloadImage(`/images/groups/${groupKey}`, snapshot.key, groupKey);
       });
     }
     

@@ -48,10 +48,21 @@ class MessageDetailsScreen extends Component {
     this.setState({showConfirm: false}) 
   }
   
+  deleteImage = (key) => {
+    console.log('Removing image board', key)
+    const path = `/images/board/${key}`;
+    return ([
+      firebase.database().ref(path).set(null),
+      firebase.storage().ref().child(path).delete(),
+    ]);
+  }
+  
   removeMessage() {
     this.hideConfirmDialog();
-    const { key } = this.props.navigation.getParam('message');
-    firebase.database().ref('/messages/board/' + key).set(null)
+    const { key, image } = this.props.navigation.getParam('message');
+    let promises = [firebase.database().ref('/messages/board/' + key).set(null)];
+    if (image) promises.push(...this.deleteImage(image));
+    Promise.all(promises)
       .then(() => this.props.navigation.goBack())
       .catch((error) => {
         console.log(JSON.stringify(error));
