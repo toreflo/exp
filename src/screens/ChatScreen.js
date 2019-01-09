@@ -225,6 +225,8 @@ class ChatScreen extends Component {
           onEndReachedThreshold: 0,
           onEndReached: () => {},
         }}
+        // lightboxProps={{ springConfig: { tension: 10000, friction: 10000 }}}
+        lightboxProps={{ springConfig: { tension: 100000, friction: 100000 }}}
         // keyboardShouldPersistTaps={'never'}
         renderInputToolbar={this.props.admin ? undefined : () => null}
         renderActions={this.renderActions}

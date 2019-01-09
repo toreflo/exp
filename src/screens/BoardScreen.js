@@ -1,5 +1,11 @@
 import React, { Component } from 'react';
-import { View, StyleSheet, ListView, Image, Dimensions } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  ListView,
+  Dimensions,
+  Image,
+} from 'react-native';
 import { 
   Container,
   Content,
@@ -18,6 +24,7 @@ import moment from 'moment';
 import 'moment/locale/it';
 import firebase from 'firebase';
 import { connect } from 'react-redux';
+import Lightbox from 'react-native-lightbox';
 
 import * as gbl from '../gbl';
 import * as fileStorage from '../lib/fileStorage';
@@ -156,14 +163,30 @@ class BoardScreen extends Component {
 
               const imageUri = this.props.images[data.image];
               if (!imageUri) return null;
-
+              
               body = (
-                  <View>
+                <View>
+                  <Lightbox
+                    springConfig={{ tension: 100000, friction: 100000 }}
+                    activeProps={{
+                      style: {
+                        flex: 1,
+                        resizeMode: 'contain',
+                      },
+                    }}
+                  >
                     <Image
                       source={{ uri: imageUri }}
-                      style={{ borderRadius: 10, width: IMAGE_WIDTH, height: IMAGE_WIDTH }}
+                      // width={IMAGE_WIDTH}
+                      style={{
+                        borderRadius: 10,
+                        width: IMAGE_WIDTH,
+                        height: IMAGE_WIDTH,
+                        resizeMode: 'cover',
+                      }}
                     />
-                  </View>
+                  </Lightbox>
+                </View>
               );
             }
             const right = (
