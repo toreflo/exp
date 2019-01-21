@@ -27,6 +27,10 @@ const createUser = (req, res) => {
       name,
       surname,
       email,
+      board: {
+        lastMessageRead: 0,
+        unread: 0,
+      }
     }))
     .then(() => res.send({
       message: `Creato utente ${email}!`
@@ -161,6 +165,27 @@ exports.newGroupMessage = functions.database.ref('/messages/groups/{groupKey}/{m
         });
         if (!doUpdate) return null;
         
+        return admin.database().ref().update(updates);
+      })
+  });
+
+  exports.newBoardMessage = functions.database.ref('/messages/board/{messageKey}')
+  .onCreate((snapshot) => {
+    const message = snapshot.val();
+    return admin.database().ref(`/users`).once('value')
+      .then((users) => {
+        let doUpdate = false;
+        const updates = {};
+        users.forEach((user) => {
+          const { key: userKey} = user;
+          const { board } = user.val();
+          if (message.creationTime <= board.lastMessageRead) return;
+
+          doUpdate = true;
+          updates[`/users/${userKey}/board/unread`] = board.unread + 1; 
+        })
+        if (!doUpdate) return null;
+
         return admin.database().ref().update(updates);
       })
   });

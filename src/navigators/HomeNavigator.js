@@ -29,12 +29,23 @@ class iconWithBadge extends React.Component {
   }
 }
 
-const unreadMapStateToProps = (state, ownProps) => {
+const groupMessageUnreadMapStateToProps = (state, ownProps) => {
   let unread = 0;
   const user = state.users.find(user => user.key === state.info.uid);
   if (user && user.groups) {
     unread = Object.values(user.groups).reduce((count, groupInfo) => (count + groupInfo.unread), 0);
   }
+  return ({
+    number: unread,
+    type: ownProps.type,
+    name: ownProps.name,
+  });
+};
+
+const boardMessageUnreadMapStateToProps = (state, ownProps) => {
+  let unread = 0;
+  const user = state.users.find(user => user.key === state.info.uid);
+  if (user) unread = user.board.unread;
   return ({
     number: unread,
     type: ownProps.type,
@@ -52,8 +63,12 @@ class HomeTabNavigator extends React.Component {
     };
 
     if (!this.props.admin) {
+      icons.BoardNavigator = {
+        component: connect(boardMessageUnreadMapStateToProps)(iconWithBadge),
+        props: icons.BoardNavigator.props,
+      };
       icons.GroupsNavigator = {
-        component: connect(unreadMapStateToProps)(iconWithBadge),
+        component: connect(groupMessageUnreadMapStateToProps)(iconWithBadge),
         props: icons.GroupsNavigator.props,
       };
     }
