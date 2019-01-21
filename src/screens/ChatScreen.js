@@ -23,6 +23,8 @@ import Dialog from 'react-native-dialog';
 import { GiftedChat } from 'react-native-gifted-chat';
 import dismissKeyboard from 'dismissKeyboard';
 
+import SlackMessage from '../components/SlackMessage';
+
 import * as firebaseDB from '../lib/firebaseDB';
 import * as fileStorage from '../lib/fileStorage';
 import * as actions from '../actions';
@@ -161,6 +163,25 @@ class ChatScreen extends Component {
     );
   }
 
+  renderMessage(props) {
+    const { currentMessage: { text: currText } } = props;
+
+    let messageTextStyle;
+
+    // Make "pure emoji" messages much bigger than plain text.
+    // if (currText && emojiUtils.isPureEmojiString(currText)) {
+    //   messageTextStyle = {
+    //     fontSize: 28,
+    //     // Emoji get clipped if lineHeight isn't increased; make it consistent across platforms.
+    //     lineHeight: Platform.OS === 'android' ? 34 : 30,
+    //   };
+    // }
+
+    return (
+      <SlackMessage {...props} messageTextStyle={messageTextStyle} />
+    );
+  }
+
   render() {
     let messages = [];
     let avatar = null;
@@ -212,6 +233,7 @@ class ChatScreen extends Component {
     return (
       <View style={{flex: 1}} >
       <GiftedChat
+        renderMessage={this.renderMessage}
         messages={messages}
         onSend={newMessages => this.sendMessage(newMessages)}
         locale="it"
