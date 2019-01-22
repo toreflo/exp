@@ -1,8 +1,7 @@
 import React, { Component } from 'react';
 import {
   View,
-  StyleSheet,
-  ListView,
+  FlatList,
   Dimensions,
   Image,
 } from 'react-native';
@@ -36,13 +35,17 @@ const IMAGE_WIDTH = Dimensions.get('window').width - 2 * (LIST_PADDING + ITEM_PA
 class BoardScreen extends Component {
   constructor(props) {
     super(props);
-    this.ds = new ListView.DataSource({ rowHasChanged: (r1, r2) => r1 !== r2 });
     this.state = { fabActive: false };
     this.db = firebase.database();
     this.goToDetails = this.goToDetails.bind(this);
     this.sortMessages = this.sortMessages.bind(this);
     this.togglePinned = this.togglePinned.bind(this);
     this.showIfActive = this.showIfActive.bind(this);
+    this.onViewableItemsChanged = this.onViewableItemsChanged.bind(this);
+
+    this.viewabilityConfig = {
+      itemVisiblePercentThreshold: 60,
+    };
   }
 
   componentDidMount() {
@@ -113,9 +116,33 @@ class BoardScreen extends Component {
     return null;
   }
 
+  onViewableItemsChanged(info) {
+    const { messages, admin, uid } = this.props;
+    if (!admin && (messages.length > 0)) {
+      const lastMessageTime = messages.reduce((max, item) => {
+        if (item.creationTime > max) return item.creationTime;
+        if (item.lastUpdate && (item.lastUpdate > max)) return item.lastUpdate;
+        return max;
+      }, 0);
+      const lastVisible = info.viewableItems.find((item) => (
+        item.isViewable
+        && ((item.item.creationTime === lastMessageTime)
+        ||  (item.item.lastUpdate === lastMessageTime))
+      ));
+      if (lastVisible) {
+        firebase.database().ref().update({
+          [`/users/${uid}/board/lastMessageRead`]: lastMessageTime,
+          [`/users/${uid}/board/unread`]: 0,
+        })
+          .catch((error) => alert(`${error.name}: ${error.message}`));  
+      }
+    }
+  }
+
   render() {
     const MAX_LEN = 100;
-    const fab = this.props.admin ? (
+    const { messages, admin, uid } = this.props;
+    const fab = admin ? (
       <Fab
         active={this.state.fabActive}
         direction="up"
@@ -145,63 +172,62 @@ class BoardScreen extends Component {
     ) : null;
 
     const content = (
-      <Content>
-        <ListView
-          removeClippedSubviews={false}
-          enableEmptySections
-          style={{ paddingLeft: LIST_PADDING, paddingRight: LIST_PADDING, paddingBottom: 75 }}
-          dataSource={this.ds.cloneWithRows(this.props.messages.sort(this.sortMessages))}
-          renderRow={(data) => {
-            let body = null;
-            if (data.body) {
-              const text = data.body.length > MAX_LEN ?
-                data.body.substring(0, MAX_LEN) + '...' :
-                data.body; 
-              body = <Text> {text} </Text>
-            } else {
-              if (!this.props.images) return null;
-
-              const imageUri = this.props.images[data.image];
-              if (!imageUri) return null;
-              
-              body = (
-                <View>
-                  <Lightbox
-                    springConfig={{ tension: 100000, friction: 100000 }}
-                    activeProps={{
-                      style: {
-                        flex: 1,
-                        resizeMode: 'contain',
-                      },
+      <FlatList
+        // removeClippedSubviews={false}
+        viewabilityConfig={this.viewabilityConfig}
+        onViewableItemsChanged={this.onViewableItemsChanged}
+        style={{ paddingLeft: LIST_PADDING, paddingRight: LIST_PADDING, paddingBottom: 75 }}
+        data={messages.sort(this.sortMessages)}
+        renderItem={({ item: data }) => {
+          let body = null;
+          if (data.body) {
+            const text = data.body.length > MAX_LEN ?
+              data.body.substring(0, MAX_LEN) + '...' :
+              data.body; 
+            body = <Text> {text} </Text>
+          } else {
+            if (!this.props.images) return null;
+            const imageUri = this.props.images[data.image];
+            if (!imageUri) return null;
+            
+            body = (
+              <View>
+                <Lightbox
+                  springConfig={{ tension: 100000, friction: 100000 }}
+                  activeProps={{
+                    style: {
+                      flex: 1,
+                      resizeMode: 'contain',
+                    },
+                  }}
+                >
+                  <Image
+                    source={{ uri: imageUri }}
+                    // width={IMAGE_WIDTH}
+                    style={{
+                      borderRadius: 10,
+                      width: IMAGE_WIDTH,
+                      height: IMAGE_WIDTH,
+                      resizeMode: 'cover',
                     }}
-                  >
-                    <Image
-                      source={{ uri: imageUri }}
-                      // width={IMAGE_WIDTH}
-                      style={{
-                        borderRadius: 10,
-                        width: IMAGE_WIDTH,
-                        height: IMAGE_WIDTH,
-                        resizeMode: 'cover',
-                      }}
-                    />
-                  </Lightbox>
-                </View>
-              );
-            }
-            const right = (
-              <Button
-                transparent
-                warning={data.pinned}
-                light={!data.pinned}
-                onPress={() => {
-                  if (this.props.admin) this.togglePinned(data);
-                }}
-              >
-                <Icon type="Ionicons" name="ios-star" style={{fontSize: 20}}/>
-              </Button>
+                  />
+                </Lightbox>
+              </View>
             );
-  
+          }
+          const right = (
+            <Button
+              transparent
+              warning={data.pinned}
+              light={!data.pinned}
+              onPress={() => {
+                if (admin) this.togglePinned(data);
+              }}
+            >
+              <Icon type="Ionicons" name="ios-star" style={{fontSize: 20}}/>
+            </Button>
+          );
+
             return (
               <Card
                 style={{
@@ -241,7 +267,6 @@ class BoardScreen extends Component {
             );
           }}
         />
-      </Content>
     );
     return (
       <Container style={{ backgroundColor: gbl.backgroundColor }}>
@@ -254,6 +279,7 @@ class BoardScreen extends Component {
   }
 }
 const mapStateToProps = (state) => ({
+  uid: state.info.uid,
   admin: state.info.admin,
   messages: state.boardMessages,
   images: state.images['board'],
