@@ -2,6 +2,7 @@ import React from "react";
 import { View } from 'react-native';
 import { Footer, FooterTab, Button, Icon, Text, StyleProvider, Badge } from 'native-base';
 import { createBottomTabNavigator } from 'react-navigation';
+import { connect } from 'react-redux';
 
 import getTheme from '../../native-base-theme/components';
 import exp from '../../native-base-theme/variables/exp';
@@ -9,7 +10,7 @@ import BoardNavigator from './BoardNavigator';
 import UsersNavigator from './UsersNavigator';
 import GroupsNavigator from './GroupsNavigator';
 import MeScreen from '../screens/MeScreen';
-import { connect } from 'react-redux';
+import * as actions from '../actions';
 
 class iconWithBadge extends React.Component {
   render() {
@@ -112,7 +113,10 @@ class HomeTabNavigator extends React.Component {
           key={item.index}
           vertical
           active={navigation.state.index === item.index}
-          onPress={() => navigation.navigate(screen)}
+          onPress={() => {
+            navigation.navigate(screen);
+            this.props.dispatch(actions.changeNavigatorTab(screen));
+          }}
         >
           {React.createElement(
             item.icon.component,

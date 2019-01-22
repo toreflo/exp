@@ -167,7 +167,9 @@ class ChatScreen extends Component {
     let showLoadEarlier = false;
     let imageUri;
     let text;
-    const { images, avatars, } = this.props;
+    const { images, avatars, isVisible } = this.props;
+    if (!isVisible) return null;
+
     if (this.props.messages) {
       this.props.messages
         .forEach((message) => {
@@ -242,6 +244,7 @@ class ChatScreen extends Component {
 }
 
 const mapStateToProps = (state, ownProps) => ({
+  isVisible: state.info.currentTab === 'GroupsNavigator',
   uid: state.info.uid,
   admin: state.info.admin,
   username: state.info.name,

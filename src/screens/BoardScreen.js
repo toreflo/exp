@@ -141,7 +141,9 @@ class BoardScreen extends Component {
 
   render() {
     const MAX_LEN = 100;
-    const { messages, admin, uid } = this.props;
+    const { messages, admin, isVisible } = this.props;
+    if (!isVisible) return null;
+
     const fab = admin ? (
       <Fab
         active={this.state.fabActive}
@@ -281,6 +283,7 @@ class BoardScreen extends Component {
 const mapStateToProps = (state) => ({
   uid: state.info.uid,
   admin: state.info.admin,
+  isVisible: state.info.currentTab === 'BoardNavigator',
   messages: state.boardMessages,
   images: state.images['board'],
 });

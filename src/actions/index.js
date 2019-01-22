@@ -92,3 +92,8 @@ export const updateUnreadMessages = (groupKey, count) => ({
   groupKey,
   count,
 });
+
+export const changeNavigatorTab = (screen) => ({
+  type: types.CHANGE_NAVIGATOR_TAB,
+  screen,
+});

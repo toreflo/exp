@@ -6,7 +6,13 @@ const info = (state = {
 }, action) => {
   switch (action.type) {
     case types.LOGIN:
-      return {...state, admin: action.admin, uid: action.uid, name: action.name};
+      return {
+        ...state,
+        admin: action.admin,
+        uid: action.uid,
+        name: action.name,
+        currentTab: 'BoardNavigator',
+      };
     case types.UPDATE_AVATAR:
       return {
         ...state,
@@ -17,6 +23,8 @@ const info = (state = {
       };
     case types.LOGOUT:
       return {admin: false};
+    case types.CHANGE_NAVIGATOR_TAB:
+      return {...state, currentTab: action.screen };
     default:
       return state
   }

@@ -7,7 +7,7 @@ import { createStore, applyMiddleware } from 'redux';
 import thunk from 'redux-thunk';
 import { Provider } from 'react-redux';
 
-import { HomeNavigator, WelcomeNavigator, pippo } from './src/navigators';
+import { HomeNavigator, WelcomeNavigator } from './src/navigators';
 import config from './config';
 import * as gbl from './src/gbl';
 import rootReducer from './src/reducers';
@@ -248,7 +248,7 @@ export default class App extends React.Component {
           </View>
           );
         } else if (this.state.user) {
-          app = <HomeNavigator admin={this.state.admin} />;
+          app = <HomeNavigator admin={this.state.admin} dispatch={store.dispatch}/>;
         } else app = <WelcomeNavigator />;
         
         return (
