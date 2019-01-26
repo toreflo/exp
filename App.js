@@ -17,11 +17,14 @@ import * as fileStorage from './src/lib/fileStorage';
 
 const store = createStore(rootReducer, applyMiddleware(thunk));
 const DEBUG_STORE = false;
+
 export default class App extends React.Component {
   constructor() {
     super();
     this.state = {
       loading: true,
+      imagesDownloaded: 0,
+      imagesCount: undefined,
     };
   }
   
@@ -42,9 +45,21 @@ export default class App extends React.Component {
   componentDidMount() {
     this.authRemoveSubscription = firebase.auth().onAuthStateChanged((user) => {
       if (user) {
+        /* Timer in case /board/imagesCount doesn't exist on DB */
+        this.loadingTimeout = setTimeout(() => {
+          this.setState({ imagesCount: 0 });
+        }, 10000);
+
+        firebaseDB.once(`/board/`, 'value', (snapshot) => {
+          const board = snapshot.val();
+          if (board && (board.imagesCount !== undefined)) {
+            clearTimeout(this.loadingTimeout);
+            this.setState({ imagesCount: board.imagesCount});
+          }
+        });
         firebaseDB.once(`/admins/`, 'value', (snapshot) => {
           let isAdmin = false;
-          const newState = {loading: false, user, dbSubscription: true};
+          const newState = {user, dbSubscription: true};
           snapshot.forEach((child) => {
             this.getAvatar(child.key);
             if ((child.key === user.uid) && child.val().admin) isAdmin = true;
@@ -57,7 +72,7 @@ export default class App extends React.Component {
             newState.admin = false;
           }          
           this.setState(newState);
-        })
+        });
 
         if (DEBUG_STORE) {
           let currentGroups;
@@ -82,11 +97,17 @@ export default class App extends React.Component {
         this.setState({loading: false, user, dbSubscription: false});
         if (DEBUG_STORE) this.unsubscribe();
       } else {
-        this.setState({loading: false, user})
+        this.setState({loading: false, user, dbSubscription: false})
       }
     });
   }
   
+  componentDidUpdate() {
+    if (this.state.loading && (this.state.imagesCount === this.state.imagesDownloaded)) {
+      this.setState({ loading: false });
+    }
+  }
+
   /* Stop listening for authentication state changes
   * when the component unmounts.
   */
@@ -202,13 +223,20 @@ export default class App extends React.Component {
 
     /* Images */
     firebaseDB.on(`/images/board/`, 'child_added', (snapshot) => {
-      this.downloadImage(`/images/board/`, snapshot.key, 'board');
+      this.downloadImage(`/images/board/`, snapshot.key, 'board', () => {
+        this.setState((prevState) => ({
+          imagesDownloaded: prevState.imagesDownloaded + 1,
+        }))
+      });
     });
   }
 
-  downloadImage(path, name, storeFather) {
+  downloadImage(path, name, storeFather, callback) {
     fileStorage.downloadFile('image', path, name, false)
-      .then((filename) => store.dispatch(actions.imageAdded(storeFather, name, filename)))
+      .then((filename) => {
+        store.dispatch(actions.imageAdded(storeFather, name, filename));
+        if (callback) callback();
+      })
       .catch((error) => {
         if (error.code === 'storage/object-not-found') return;
         alert(error);
@@ -246,25 +274,24 @@ export default class App extends React.Component {
         <View style={styles.container}>
         <Spinner />
         </View>
-        );
-      } else if (this.state.user) {
-        app = <HomeNavigator admin={this.state.admin} dispatch={store.dispatch}/>;
-      } else app = <WelcomeNavigator />;
-      
-      return (
-        <Provider store={ store }>
-        {app}
-        </Provider>
-        );
-      }
-    }
+      );
+    } else if (this.state.user) {
+      app = <HomeNavigator admin={this.state.admin} dispatch={store.dispatch}/>;
+    } else app = <WelcomeNavigator />;
     
-    const styles = StyleSheet.create({
-      container: {
-        flex: 1,
-        backgroundColor: gbl.backgroundColor,
-        alignItems: 'center',
-        justifyContent: 'center',
-      },
-    });
+    return (
+      <Provider store={ store }>
+      {app}
+      </Provider>
+    );
+  }
+}
     
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: gbl.backgroundColor,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});
