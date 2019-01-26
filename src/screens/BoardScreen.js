@@ -140,8 +140,103 @@ class BoardScreen extends Component {
     }
   }
 
-  render() {
+  renderTextMessage(data) {
     const MAX_LEN = 100;
+    const text = data.body.length > MAX_LEN ?
+      data.body.substring(0, MAX_LEN) + '...' :
+      data.body; 
+    return <Text> {text} </Text>
+  }
+
+  renderImageMessage(data) {
+    if (!this.props.images) return null;
+    const imageUri = this.props.images[data.image];
+    if (!imageUri) return null;
+    
+    return (
+      <View>
+        <Lightbox
+          springConfig={{ tension: 100000, friction: 100000 }}
+          activeProps={{
+            style: {
+              flex: 1,
+              resizeMode: 'contain',
+            },
+          }}
+        >
+          <Image
+            source={{ uri: imageUri }}
+            style={{
+              borderRadius: BORDER_RADIUS,
+              width: IMAGE_WIDTH,
+              height: IMAGE_WIDTH,
+              resizeMode: 'cover',
+            }}
+          />
+        </Lightbox>
+      </View>
+    );
+  }
+
+  renderMessage (data) {
+    let body = null;
+    if (data.body) body = this.renderTextMessage(data);
+    else body =  this.renderImageMessage(data);
+    
+    const right = (
+      <Button
+        transparent
+        warning={data.pinned}
+        light={!data.pinned}
+        onPress={() => {
+          if (this.props.admin) this.togglePinned(data);
+        }}
+      >
+        <Icon type="Ionicons" name="ios-star" style={{fontSize: 20}}/>
+      </Button>
+    );
+
+    return (
+      <Card
+        style={{
+          borderRadius: BORDER_RADIUS,
+          overflow: 'hidden',
+          paddingLeft: 0,
+          marginLeft: 0,
+          paddingRight: 0,
+          marginRight: 0,
+          marginBottom: 20,
+        }}>
+        <CardItem header>
+          <Body style={{alignItems: 'flex-start', justifyContent: 'flex-start'}}>
+            <H1> {data.title ? data.title : 'Image'} </H1>
+          </Body>
+          {right}
+        </CardItem>
+        <CardItem
+          button
+          onPress={ () => this.goToDetails(data) }
+          style={{
+            paddingLeft: ITEM_PADDING,
+            marginLeft: 0,
+            paddingRight: ITEM_PADDING,
+            marginRight: 0,
+            paddingTop: 10,
+            paddingBottom: 10
+          }}
+        >
+          {body}
+        </CardItem>
+        <CardItem style={{justifyContent: 'flex-end'}}>
+          <Text style={{fontSize: 10}}>
+            {moment.unix(data.creationTime/1000).format('LLL')} 
+          </Text>
+        </CardItem>
+      </Card>
+    );
+  }
+
+  render() {
     const { messages, admin, isVisible } = this.props;
     if (!isVisible) return null;
 
@@ -181,95 +276,8 @@ class BoardScreen extends Component {
         onViewableItemsChanged={this.onViewableItemsChanged}
         style={{ paddingLeft: LIST_PADDING, paddingRight: LIST_PADDING, paddingBottom: 75 }}
         data={messages.sort(this.sortMessages)}
-        renderItem={({ item: data }) => {
-          let body = null;
-          if (data.body) {
-            const text = data.body.length > MAX_LEN ?
-              data.body.substring(0, MAX_LEN) + '...' :
-              data.body; 
-            body = <Text> {text} </Text>
-          } else {
-            if (!this.props.images) return null;
-            const imageUri = this.props.images[data.image];
-            if (!imageUri) return null;
-            
-            body = (
-              <View>
-                <Lightbox
-                  springConfig={{ tension: 100000, friction: 100000 }}
-                  activeProps={{
-                    style: {
-                      flex: 1,
-                      resizeMode: 'contain',
-                    },
-                  }}
-                >
-                  <Image
-                    source={{ uri: imageUri }}
-                    style={{
-                      borderRadius: BORDER_RADIUS,
-                      width: IMAGE_WIDTH,
-                      height: IMAGE_WIDTH,
-                      resizeMode: 'cover',
-                    }}
-                  />
-                </Lightbox>
-              </View>
-            );
-          }
-          const right = (
-            <Button
-              transparent
-              warning={data.pinned}
-              light={!data.pinned}
-              onPress={() => {
-                if (admin) this.togglePinned(data);
-              }}
-            >
-              <Icon type="Ionicons" name="ios-star" style={{fontSize: 20}}/>
-            </Button>
-          );
-
-            return (
-              <Card
-                style={{
-                  borderRadius: BORDER_RADIUS,
-                  overflow: 'hidden',
-                  paddingLeft: 0,
-                  marginLeft: 0,
-                  paddingRight: 0,
-                  marginRight: 0,
-                  marginBottom: 20,
-                }}>
-                <CardItem header>
-                  <Body style={{alignItems: 'flex-start', justifyContent: 'flex-start'}}>
-                    <H1> {data.title ? data.title : 'Image'} </H1>
-                  </Body>
-                  {right}
-                </CardItem>
-                <CardItem
-                  button
-                  onPress={ () => this.goToDetails(data) }
-                  style={{
-                    paddingLeft: ITEM_PADDING,
-                    marginLeft: 0,
-                    paddingRight: ITEM_PADDING,
-                    marginRight: 0,
-                    paddingTop: 10,
-                    paddingBottom: 10
-                  }}
-                >
-                  {body}
-                </CardItem>
-                <CardItem style={{justifyContent: 'flex-end'}}>
-                  <Text style={{fontSize: 10}}>
-                    {moment.unix(data.creationTime/1000).format('LLL')} 
-                  </Text>
-                </CardItem>
-              </Card>
-            );
-          }}
-        />
+        renderItem={({ item: data }) => this.renderMessage(data)}
+      />
     );
     return (
       <Container style={{ backgroundColor: gbl.backgroundColor }}>
