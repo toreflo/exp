@@ -22,6 +22,7 @@ export default class App extends React.Component {
   constructor() {
     super();
     this.state = {
+      logged: false,
       loading: true,
       imagesDownloaded: 0,
       imagesCount: undefined,
@@ -45,8 +46,12 @@ export default class App extends React.Component {
   componentDidMount() {
     this.authRemoveSubscription = firebase.auth().onAuthStateChanged((user) => {
       if (user) {
+        this.setState({ loading: true, logged: true });
+
         /* Timer in case /board/imagesCount doesn't exist on DB */
         this.loadingTimeout = setTimeout(() => {
+          if (!this.state.admin) console.log('Loading timeout');
+  
           this.setState({ imagesCount: 0 });
         }, 10000);
 
@@ -91,13 +96,14 @@ export default class App extends React.Component {
             }
           });
         }
-      } else if (this.state.dbSubscription) {
-        store.dispatch(actions.logout());
-        firebaseDB.unregisterAll();
-        this.setState({loading: false, user, dbSubscription: false});
-        if (DEBUG_STORE) this.unsubscribe();
       } else {
-        this.setState({loading: false, user, dbSubscription: false})
+        if (this.state.dbSubscription) {
+          store.dispatch(actions.logout());
+          firebaseDB.unregisterAll();
+          if (DEBUG_STORE) this.unsubscribe();
+        } else {
+        }
+        this.setState({ logged: false, loading: false, user, dbSubscription: false });
       }
     });
   }
