@@ -130,6 +130,37 @@ const deleteOldImages =  (req, res) => {
     }));
 }
 
+const onBoardChange = (mode, message) => {
+  return Promise.all([
+    admin.database().ref(`/users`).once('value'),
+    admin.database().ref(`/board`).once('value'),
+  ])
+    .then(([users, boardSnapshot]) => {
+      let doUpdate = false;
+      const updates = {};
+      users.forEach((user) => {
+        const { key: userKey} = user;
+        const { board } = user.val();
+        if (message.creationTime <= board.lastMessageRead) return;
+
+        doUpdate = true;
+        let unread = board.unread;
+        unread += (mode === 'create') ? 1 : -1;
+        updates[`/users/${userKey}/board/unread`] = unread; 
+      })
+      if (message.image) {
+        const boardInfo = boardSnapshot.val();
+        let count = (boardInfo && boardInfo.imagesCount) ? boardInfo.imagesCount : 0;
+        count += (mode === 'create') ? 1 : -1;
+        updates[`/board/imagesCount`] = count;
+        doUpdate = true;
+      }
+      if (!doUpdate) return null;
+
+      return admin.database().ref().update(updates);
+    })
+}
+
 exports.httpRequests = functions.https.onRequest((req, res) => {
   if (req.body.type === 'createUser') return createUser(req, res);
   if (req.body.type === 'deleteUser') return deleteUser(req, res);
@@ -169,23 +200,14 @@ exports.newGroupMessage = functions.database.ref('/messages/groups/{groupKey}/{m
       })
   });
 
-  exports.newBoardMessage = functions.database.ref('/messages/board/{messageKey}')
-  .onCreate((snapshot) => {
-    const message = snapshot.val();
-    return admin.database().ref(`/users`).once('value')
-      .then((users) => {
-        let doUpdate = false;
-        const updates = {};
-        users.forEach((user) => {
-          const { key: userKey} = user;
-          const { board } = user.val();
-          if (message.creationTime <= board.lastMessageRead) return;
+  exports.BoardMessageCreate = functions.database.ref('/messages/board/{messageKey}')
+    .onCreate((snapshot) => {
+      const message = snapshot.val();
+      return onBoardChange('create', message);
+    });
 
-          doUpdate = true;
-          updates[`/users/${userKey}/board/unread`] = board.unread + 1; 
-        })
-        if (!doUpdate) return null;
-
-        return admin.database().ref().update(updates);
-      })
-  });
+  exports.BoardMessageDelete = functions.database.ref('/messages/board/{messageKey}')
+    .onDelete((snapshot) => {
+      const message = snapshot.val();
+      return onBoardChange('delete', message);
+    });

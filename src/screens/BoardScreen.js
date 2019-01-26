@@ -28,8 +28,9 @@ import Lightbox from 'react-native-lightbox';
 import * as gbl from '../gbl';
 import * as fileStorage from '../lib/fileStorage';
 
-const LIST_PADDING = 15;
-const ITEM_PADDING = 5;
+const LIST_PADDING  = 0;  // 15;
+const ITEM_PADDING  = 0;  //  5;
+const BORDER_RADIUS = 0;  // 10;
 const IMAGE_WIDTH = Dimensions.get('window').width - 2 * (LIST_PADDING + ITEM_PADDING);
 
 class BoardScreen extends Component {
@@ -205,9 +206,8 @@ class BoardScreen extends Component {
                 >
                   <Image
                     source={{ uri: imageUri }}
-                    // width={IMAGE_WIDTH}
                     style={{
-                      borderRadius: 10,
+                      borderRadius: BORDER_RADIUS,
                       width: IMAGE_WIDTH,
                       height: IMAGE_WIDTH,
                       resizeMode: 'cover',
@@ -233,12 +233,13 @@ class BoardScreen extends Component {
             return (
               <Card
                 style={{
-                  borderRadius: 10,
+                  borderRadius: BORDER_RADIUS,
                   overflow: 'hidden',
                   paddingLeft: 0,
                   marginLeft: 0,
                   paddingRight: 0,
                   marginRight: 0,
+                  marginBottom: 20,
                 }}>
                 <CardItem header>
                   <Body style={{alignItems: 'flex-start', justifyContent: 'flex-start'}}>

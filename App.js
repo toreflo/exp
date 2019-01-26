@@ -103,168 +103,168 @@ export default class App extends React.Component {
       });
   }
     
-    subscribeAdmin(uid) {
-      firebaseDB.once(`/admins/${uid}`, 'value', (snapshot) => {
-        const { name } = snapshot.val();
-        store.dispatch(actions.login(true, uid, name));
-      });
-      
-      /* Users */
-      firebaseDB.on('/users/', 'child_added', (snapshot) => {
-        store.dispatch(actions.userAdded({key: snapshot.key, ...snapshot.val()}))
-      });
-      firebaseDB.on('/users/', 'child_changed', (snapshot) => {
-        store.dispatch(actions.userChanged({key: snapshot.key, ...snapshot.val()}));
-      });
-      firebaseDB.on('/users/', 'child_removed', (snapshot) => {
-        store.dispatch(actions.userRemoved(snapshot.key));
-      });
-      
-      /* Groups */
-      firebaseDB.on('/groups/', 'child_added', (snapshot) => {
-        store.dispatch(actions.groupAdded({key: snapshot.key, ...snapshot.val()}))
-        this.subscribeGroupMessages(snapshot.key);
-      });
-      firebaseDB.on('/groups/', 'child_changed', (snapshot) => {
-        store.dispatch(actions.groupChanged({key: snapshot.key, ...snapshot.val()}));
-      });
-      firebaseDB.on('/groups/', 'child_removed', (snapshot) => {
-        store.dispatch(actions.groupRemoved(snapshot.key));
-        this.unsubscribeGroupMessages(snapshot.key);
-      });
-      
-      /* Board messages */
-      this.subscribeBoarMessages();
-    }
+  subscribeAdmin(uid) {
+    firebaseDB.once(`/admins/${uid}`, 'value', (snapshot) => {
+      const { name } = snapshot.val();
+      store.dispatch(actions.login(true, uid, name));
+    });
+
+    /* Board messages */
+    this.subscribeBoardMessages();
+
+    /* Users */
+    firebaseDB.on('/users/', 'child_added', (snapshot) => {
+      store.dispatch(actions.userAdded({key: snapshot.key, ...snapshot.val()}))
+    });
+    firebaseDB.on('/users/', 'child_changed', (snapshot) => {
+      store.dispatch(actions.userChanged({key: snapshot.key, ...snapshot.val()}));
+    });
+    firebaseDB.on('/users/', 'child_removed', (snapshot) => {
+      store.dispatch(actions.userRemoved(snapshot.key));
+    });
     
-    subscribeUser(uid) {
-      store.dispatch(actions.login(false, uid));
+    /* Groups */
+    firebaseDB.on('/groups/', 'child_added', (snapshot) => {
+      store.dispatch(actions.groupAdded({key: snapshot.key, ...snapshot.val()}))
+      this.subscribeGroupMessages(snapshot.key);
+    });
+    firebaseDB.on('/groups/', 'child_changed', (snapshot) => {
+      store.dispatch(actions.groupChanged({key: snapshot.key, ...snapshot.val()}));
+    });
+    firebaseDB.on('/groups/', 'child_removed', (snapshot) => {
+      store.dispatch(actions.groupRemoved(snapshot.key));
+      this.unsubscribeGroupMessages(snapshot.key);
+    });    
+  }
+  
+  subscribeUser(uid) {
+    store.dispatch(actions.login(false, uid));
+    
+    /* Board messages */
+    this.subscribeBoardMessages();
+    
+    let groups = {};
+    let prevGroups;
+    
+    /* Groups and group messages */
+    firebaseDB.on(`/users/${uid}`, 'value', (snapshot) => {
+      store.dispatch(actions.userChanged({key: snapshot.key, ...snapshot.val()}))
+      prevGroups = groups;
+      ({ groups } = snapshot.val());
+      if (!groups) groups = {};
+      const groupsAdded = Object.keys(groups).filter(key => prevGroups[key] === undefined);
+      const groupsRemoved = Object.keys(prevGroups).filter(key => groups[key] === undefined);
       
-      /* Board messages */
-      this.subscribeBoarMessages();
-      
-      let groups = {};
-      let prevGroups;
-      
-      /* Groups and group messages */
-      firebaseDB.on(`/users/${uid}`, 'value', (snapshot) => {
-        store.dispatch(actions.userChanged({key: snapshot.key, ...snapshot.val()}))
-        prevGroups = groups;
-        ({ groups } = snapshot.val());
-        if (!groups) groups = {};
-        const groupsAdded = Object.keys(groups).filter(key => prevGroups[key] === undefined);
-        const groupsRemoved = Object.keys(prevGroups).filter(key => groups[key] === undefined);
-        
-        if (groupsAdded.length > 0) {
-          groupsAdded.forEach((groupKey) => {
-            this.subscribeGroup(groupKey);
-          });
-        } else if (groupsRemoved.length > 0) {
-          groupsRemoved.forEach((groupKey) => {
-            this.unsubscribeGroup(groupKey);
-          });
+      if (groupsAdded.length > 0) {
+        groupsAdded.forEach((groupKey) => {
+          this.subscribeGroup(groupKey);
+        });
+      } else if (groupsRemoved.length > 0) {
+        groupsRemoved.forEach((groupKey) => {
+          this.unsubscribeGroup(groupKey);
+        });
+      }
+    });
+  }  
+  
+  subscribeGroup(groupKey) {
+    let firstTime = true;
+    /* Group */
+    firebaseDB.on(`/groups/${groupKey}/`, 'value', (snapshot) => {
+      if (snapshot.val()) {
+        store.dispatch(actions.groupChanged({key: snapshot.key, ...snapshot.val()}))
+        if (firstTime) {
+          /* Group messages */
+          this.subscribeGroupMessages(groupKey);
+          firstTime = false;
         }
-      });
-    }  
-    
-    subscribeGroup(groupKey) {
-      let firstTime = true;
-      /* Group */
-      firebaseDB.on(`/groups/${groupKey}/`, 'value', (snapshot) => {
-        if (snapshot.val()) {
-          store.dispatch(actions.groupChanged({key: snapshot.key, ...snapshot.val()}))
-          if (firstTime) {
-            /* Group messages */
-            this.subscribeGroupMessages(groupKey);
-            firstTime = false;
-          }
-        }
-      });
-    }
-    
-    unsubscribeGroup(groupKey) {
-      firebaseDB.unregister(`/groups/${groupKey}/`, 'value');
-      store.dispatch(actions.groupRemoved(groupKey));
-      this.unsubscribeGroupMessages(groupKey);
-    }
+      }
+    });
+  }
+  
+  unsubscribeGroup(groupKey) {
+    firebaseDB.unregister(`/groups/${groupKey}/`, 'value');
+    store.dispatch(actions.groupRemoved(groupKey));
+    this.unsubscribeGroupMessages(groupKey);
+  }
 
-    subscribeBoarMessages() {
-      /* Messages */
-      firebaseDB.on('/messages/board/', 'child_added', (snapshot) => {
-        store.dispatch(actions.boardMessageAdded({key: snapshot.key, ...snapshot.val()}))
-      });
-      firebaseDB.on('/messages/board/', 'child_changed', (snapshot) => {
-        store.dispatch(actions.boardMessageChanged({key: snapshot.key, ...snapshot.val()}));
-      });
-      firebaseDB.on('/messages/board/', 'child_removed', (snapshot) => {
-        store.dispatch(actions.boardMessageRemoved(snapshot.key));
-      });
+  subscribeBoardMessages() {
+    /* Messages */
+    firebaseDB.on('/messages/board/', 'child_added', (snapshot) => {
+      store.dispatch(actions.boardMessageAdded({key: snapshot.key, ...snapshot.val()}))
+    });
+    firebaseDB.on('/messages/board/', 'child_changed', (snapshot) => {
+      store.dispatch(actions.boardMessageChanged({key: snapshot.key, ...snapshot.val()}));
+    });
+    firebaseDB.on('/messages/board/', 'child_removed', (snapshot) => {
+      store.dispatch(actions.boardMessageRemoved(snapshot.key));
+    });
 
-      /* Images */
-      firebaseDB.on(`/images/board/`, 'child_added', (snapshot) => {
-        this.downloadImage(`/images/board/`, snapshot.key, 'board');
-      });
-    }
+    /* Images */
+    firebaseDB.on(`/images/board/`, 'child_added', (snapshot) => {
+      this.downloadImage(`/images/board/`, snapshot.key, 'board');
+    });
+  }
 
-    downloadImage(path, name, storeFather) {
-      fileStorage.downloadFile('image', path, name, false)
+  downloadImage(path, name, storeFather) {
+    fileStorage.downloadFile('image', path, name, false)
       .then((filename) => store.dispatch(actions.imageAdded(storeFather, name, filename)))
       .catch((error) => {
         if (error.code === 'storage/object-not-found') return;
         alert(error);
       });
-    }
-    
-    subscribeGroupMessages(groupKey) {
-      /* Messages */
-      firebaseDB.on(`/messages/groups/${groupKey}/`, 'child_added', (snapshot) => {
-        store.dispatch(actions.groupMessageAdded({
-          groupKey, 
-          message: {
-            key: snapshot.key,
-            ...snapshot.val(),
-          },
-        }))
-      }, gbl.MAX_NUM_MESSAGES);
-
-      /* Images */
-      firebaseDB.on(`/images/groups/${groupKey}/`, 'child_added', (snapshot) => {
-        this.downloadImage(`/images/groups/${groupKey}`, snapshot.key, groupKey);
-      });
-    }
-    
-    unsubscribeGroupMessages(groupKey) {
-      firebaseDB.unregister(`/messages/groups/${groupKey}/`, 'child_added');
-      firebaseDB.unregister(`/images/groups/${groupKey}/`, 'child_added');
-      store.dispatch(actions.groupMessageUnsubscribed(groupKey));
-    }
-    
-    render() {
-      let app;
-      if (this.state.loading) {
-        app = (
-          <View style={styles.container}>
-          <Spinner />
-          </View>
-          );
-        } else if (this.state.user) {
-          app = <HomeNavigator admin={this.state.admin} dispatch={store.dispatch}/>;
-        } else app = <WelcomeNavigator />;
-        
-        return (
-          <Provider store={ store }>
-          {app}
-          </Provider>
-          );
-        }
-      }
-      
-      const styles = StyleSheet.create({
-        container: {
-          flex: 1,
-          backgroundColor: gbl.backgroundColor,
-          alignItems: 'center',
-          justifyContent: 'center',
+  }
+  
+  subscribeGroupMessages(groupKey) {
+    /* Messages */
+    firebaseDB.on(`/messages/groups/${groupKey}/`, 'child_added', (snapshot) => {
+      store.dispatch(actions.groupMessageAdded({
+        groupKey, 
+        message: {
+          key: snapshot.key,
+          ...snapshot.val(),
         },
-      });
+      }))
+    }, gbl.MAX_NUM_MESSAGES);
+    
+    /* Images */
+    firebaseDB.on(`/images/groups/${groupKey}/`, 'child_added', (snapshot) => {
+      this.downloadImage(`/images/groups/${groupKey}`, snapshot.key, groupKey);
+    });
+  }
+  
+  unsubscribeGroupMessages(groupKey) {
+    firebaseDB.unregister(`/messages/groups/${groupKey}/`, 'child_added');
+    firebaseDB.unregister(`/images/groups/${groupKey}/`, 'child_added');
+    store.dispatch(actions.groupMessageUnsubscribed(groupKey));
+  }
+  
+  render() {
+    let app;
+    if (this.state.loading) {
+      app = (
+        <View style={styles.container}>
+        <Spinner />
+        </View>
+        );
+      } else if (this.state.user) {
+        app = <HomeNavigator admin={this.state.admin} dispatch={store.dispatch}/>;
+      } else app = <WelcomeNavigator />;
       
+      return (
+        <Provider store={ store }>
+        {app}
+        </Provider>
+        );
+      }
+    }
+    
+    const styles = StyleSheet.create({
+      container: {
+        flex: 1,
+        backgroundColor: gbl.backgroundColor,
+        alignItems: 'center',
+        justifyContent: 'center',
+      },
+    });
+    
