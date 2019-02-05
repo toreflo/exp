@@ -9,7 +9,7 @@ import {
   Container,
   Content,
   Fab,
-  List,
+  Left,
   Spinner,
   Text,
   Button,
@@ -24,6 +24,7 @@ import 'moment/locale/it';
 import firebase from 'firebase';
 import { connect } from 'react-redux';
 import Lightbox from 'react-native-lightbox';
+import Dialog from "react-native-dialog";
 
 import * as gbl from '../gbl';
 import * as fileStorage from '../lib/fileStorage';
@@ -43,10 +44,17 @@ class BoardScreen extends Component {
     this.togglePinned = this.togglePinned.bind(this);
     this.showIfActive = this.showIfActive.bind(this);
     this.onViewableItemsChanged = this.onViewableItemsChanged.bind(this);
+    this.editMessage = this.editMessage.bind(this);
+    this.removeMessage = this.removeMessage.bind(this);
+    this.deleteImage = this.deleteImage.bind(this);
+    this.showConfirmDialog = this.showConfirmDialog.bind(this);
+    this.hideConfirmDialog = this.hideConfirmDialog.bind(this);
 
     this.viewabilityConfig = {
       itemVisiblePercentThreshold: 60,
     };
+
+    this.state = {};
   }
 
   componentDidMount() {
@@ -140,6 +148,14 @@ class BoardScreen extends Component {
     }
   }
 
+  showConfirmDialog(data) {
+    this.setState({message: data, showConfirm: true});
+  }
+
+  hideConfirmDialog() {
+    this.setState({message: undefined, showConfirm: false}) 
+  }
+
   renderTextMessage(data) {
     const MAX_LEN = 100;
     const text = data.body.length > MAX_LEN ?
@@ -183,6 +199,28 @@ class BoardScreen extends Component {
     if (data.body) body = this.renderTextMessage(data);
     else body =  this.renderImageMessage(data);
     
+    const left = [];
+    if (this.props.admin && data.body) {
+      left.push(
+        <Button
+          key="edit"
+          transparent
+          onPress={() => this.editMessage(data)}
+        >
+          <Icon type="FontAwesome" name="pencil" />
+        </Button>
+      );
+    }
+    left.push(
+      <Button
+        key="delete"
+        transparent
+        onPress={() => this.showConfirmDialog(data)}
+      >
+        <Icon type="Ionicons" name="ios-trash" />
+      </Button>
+    );
+
     const right = (
       <Button
         transparent
@@ -228,12 +266,49 @@ class BoardScreen extends Component {
           {body}
         </CardItem>
         <CardItem style={{justifyContent: 'flex-end'}}>
+          <Left>
+            {left}
+          </Left>
           <Text style={{fontSize: 10}}>
             {moment.unix(data.creationTime/1000).format('LLL')} 
           </Text>
         </CardItem>
       </Card>
     );
+  }
+
+  editMessage(message) {
+    const { key, title, body, creationTime, pinned } = message;
+    this.props.navigation.navigate('WriteMessageScreen', {
+      editInfo: {
+        key,
+        title,
+        body,
+        creationTime,
+        pinned,
+      }
+    });
+  }
+
+  deleteImage = (key) => {
+    const path = `/images/board/${key}`;
+    return ([
+      firebase.database().ref(path).set(null),
+      firebase.storage().ref().child(path).delete(),
+    ]);
+  }
+
+  removeMessage() {
+    this.hideConfirmDialog();
+    const { key, image } = this.state.message;
+    let promises = [firebase.database().ref('/messages/board/' + key).set(null)];
+    if (image) promises.push(...this.deleteImage(image));
+    Promise.all(promises)
+      .then(() => this.props.navigation.goBack())
+      .catch((error) => {
+        console.log(JSON.stringify(error));
+        alert(`${error.name}: ${error.message}`);
+      });
   }
 
   render() {
@@ -284,6 +359,16 @@ class BoardScreen extends Component {
         <View style={{ flex: 1 }}>
           {content}
           {fab}
+        </View>
+        <View>
+          <Dialog.Container visible={this.state.showConfirm}>
+            <Dialog.Title>Conferma cancellazione</Dialog.Title>
+            <Dialog.Description>
+              Sei sicuro di voler cancellare il messaggio?
+            </Dialog.Description>
+            <Dialog.Button label="Annulla" onPress={this.hideConfirmDialog}/>
+            <Dialog.Button label="Conferma" onPress={this.removeMessage}/>
+          </Dialog.Container>
         </View>
       </Container>
     );
