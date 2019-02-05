@@ -322,9 +322,9 @@ class BoardScreen extends Component {
         containerStyle={{ }}
         style={{ backgroundColor: '#5067FF' }}
         position="bottomRight"
-        onPress={() => this.setState((prevState) => ({ fabActive: !prevState.fabActive }))}
+        onPress={() => this.state.uploading ? null : this.setState((prevState) => ({ fabActive: !prevState.fabActive }))}
       >
-        <Icon type="Ionicons" name="ios-add" />
+        {this.state.uploading ? <Spinner color="white" /> : <Icon type="Ionicons" name="ios-add" />}
         {this.showIfActive(
           <Button
             style={{ backgroundColor: '#34A34F' }}
