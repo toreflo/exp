@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { View, StyleSheet, ListView } from 'react-native';
+import { View, StyleSheet, FlatList } from 'react-native';
 import { 
   Container,
   Content,
@@ -26,7 +26,6 @@ import * as gbl from '../gbl';
 class GroupsScreen extends Component {
   constructor(props) {
     super(props);
-    this.ds = new ListView.DataSource({ rowHasChanged: (r1, r2) => r1 !== r2 });
     this.state = {};
     this.goToDetails = this.goToDetails.bind(this);
     this.createGroup = this.createGroup.bind(this);
@@ -93,12 +92,12 @@ class GroupsScreen extends Component {
     } 
     const content = (
       <Content>
-        <ListView
+        <FlatList
           style={{ padding: 15, paddingBottom: 75 }}
           enableEmptySections
-          // dataSource={this.ds.cloneWithRows(this.state.groups)}
-          dataSource={this.ds.cloneWithRows(this.props.groups.sort(this.sortGroups))}
-          renderRow={(data) => {
+          data={this.props.groups.sort(this.sortGroups)}
+
+          renderItem={({ item: data }) => {
             let info = null;
             let right = null;
             if (!this.props.admin) {
