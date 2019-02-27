@@ -37,6 +37,7 @@ export default class App extends React.Component {
     });
     await fileStorage.mkdirIfNotExists('avatar');
     await fileStorage.mkdirIfNotExists('image');
+    await fileStorage.mkdirIfNotExists('groupAvatar');
   }
   
   /**
@@ -66,7 +67,7 @@ export default class App extends React.Component {
           let isAdmin = false;
           const newState = {user, dbSubscription: true};
           snapshot.forEach((child) => {
-            this.getAvatar(child.key);
+            this.getAvatar('avatar', child.key);
             if ((child.key === user.uid) && child.val().admin) isAdmin = true;
           });
           if (isAdmin) {
@@ -121,9 +122,15 @@ export default class App extends React.Component {
     this.authRemoveSubscription();
   }
   
-  getAvatar(uid) {
-    fileStorage.downloadFile('avatar', '/avatars/', uid)
-      .then((filename) => store.dispatch(actions.updateAvatar(uid, filename)))
+  getAvatar(type, key) {
+    fileStorage.downloadFile(type, `/${type}s/`, key)
+      .then((filename) => {
+        if (type === 'avatar') {
+          store.dispatch(actions.updateAvatar(key, filename));
+        } else {
+          store.dispatch(actions.updateGroupAvatar(key, filename));
+        }
+      })
       .catch((error) => {
         if (error.code === 'storage/object-not-found') return;
         alert(error);
@@ -265,6 +272,9 @@ export default class App extends React.Component {
     firebaseDB.on(`/images/groups/${groupKey}/`, 'child_added', (snapshot) => {
       this.downloadImage(`/images/groups/${groupKey}`, snapshot.key, groupKey);
     });
+
+    /* Group avatars */
+    this.getAvatar('groupAvatar', groupKey);
   }
   
   unsubscribeGroupMessages(groupKey) {

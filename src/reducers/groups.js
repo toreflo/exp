@@ -5,8 +5,10 @@ const group = (state = {}, action) => {
     case types.GROUP_ADDED:
     case types.GROUP_CHANGED:
       return {...action.group};
+    case types.UPDATE_GROUP_AVATAR:
+      return {...state, avatar: action.uri};
     default:
-      return state
+      return state;
   }
 };
 
@@ -25,6 +27,10 @@ const groups = (state = [], action) => {
       idx = state.findIndex(group => group.key === action.groupKey);
       if (idx === -1) return state;
       return [...state.slice(0, idx), ...state.slice(idx + 1)];
+    case types.UPDATE_GROUP_AVATAR:
+      idx = state.findIndex(group => group.key === action.groupKey);
+      if (idx === -1) return state;
+      return [...state.slice(0, idx), group(state[idx], action), ...state.slice(idx + 1)];
     default:
       return state
   }

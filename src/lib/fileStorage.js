@@ -54,11 +54,18 @@ export const pickFromGallery = async (options, callbackAsync) => {
 
 export const downloadFile = (type, firebasePath, name, checkTime = true) => new Promise((resolve, reject) => {
   const ref = firebase.storage().ref().child(firebasePath + '/' + name);
-  const filename = getFileUri(type, name);
+  let filename;
+  let remoteTime;
 
-  Promise.all([FileSystem.getInfoAsync(filename), ref.getMetadata()])
-    .then(([localInfo, remoteInfo]) => {
-      const remoteTime = new Date(remoteInfo.timeCreated).getTime()/1000
+  ref.getMetadata()
+    .then((remoteInfo) => {
+      remoteTime = new Date(remoteInfo.timeCreated).getTime()/1000;
+      if (type === 'groupAvatar') {
+        filename = getFileUri(type, name, Number.parseInt(remoteTime));
+      } else filename = getFileUri(type, name);
+      return FileSystem.getInfoAsync(filename);
+    })
+    .then((localInfo) => {
       if (localInfo.exists && ((localInfo.modificationTime >= remoteTime) || !checkTime)) {
         console.log('File', firebasePath + '/' + name, 'is up to date');
         return resolve(filename);
@@ -74,9 +81,11 @@ export const downloadFile = (type, firebasePath, name, checkTime = true) => new 
     .catch(error => reject(error));
 })
 
-export const saveFile = async (uri, type, name) => {
-  const to = getFileUri(type, name);
+export const saveFile = async (uri, type, name, postfix) => {
+  const to = getFileUri(type, name, postfix);
   await FileSystem.copyAsync({ from: uri, to, });
+
+  return to;
 }
 
 export const mkdirIfNotExists = async (type) => {
@@ -87,8 +96,8 @@ export const mkdirIfNotExists = async (type) => {
   }
 }
 
-const getFileUri = (type, name) => {
+const getFileUri = (type, name, postfix) => {
   const dir = FileSystem.documentDirectory + type + 's';
-  return dir + '/' + name + '.jpeg';
+  return dir + '/' + name + (postfix ? '_' + postfix : '') + '.jpeg';
 }
 

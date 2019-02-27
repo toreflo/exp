@@ -10,7 +10,7 @@ import {
   CardItem,
   Button,
   Right,
-  Badge,
+  SwipeRow,
   Grid,
   Col,
   Row,
@@ -39,6 +39,7 @@ class GroupsScreen extends Component {
   constructor(props) {
     super(props);
     this.state = {};
+    this.groupRows = {};
     this.goToDetails = this.goToDetails.bind(this);
     this.createGroup = this.createGroup.bind(this);
     this.showGroupDialog = this.showGroupDialog.bind(this);
@@ -105,16 +106,19 @@ class GroupsScreen extends Component {
 
   renderMessage (data) {
     const MAX_LEN = 25;
-    let info = null;
     let lastMessageText;
+    let preview;
     const messages = this.props.messages[data.key];
     let timeInfo;
     if (messages && messages.length) {
       const lastMessage = messages[messages.length - 1];
-      lastMessageText = lastMessage.text;
-      if (lastMessage.text.length > MAX_LEN) {
-        lastMessageText = lastMessage.text.substring(0, MAX_LEN) + '...'; 
-      }
+      if (lastMessage.text) {
+        lastMessageText = lastMessage.text;
+        if (lastMessage.text.length > MAX_LEN) {
+          lastMessageText = lastMessage.text.substring(0, MAX_LEN) + '...'; 
+        }
+        preview = lastMessageText;
+      } else preview = 'Immagine';
       if (isToday(lastMessage.createdAt)) timeInfo = moment(lastMessage.createdAt).format('LT');
       else if (isYesterday(lastMessage.createdAt)) timeInfo = 'Ieri';
       else if (isWithinAWeek(lastMessage.createdAt)) timeInfo = moment(lastMessage.createdAt).format('dddd');
@@ -122,32 +126,53 @@ class GroupsScreen extends Component {
     }
 
     return (
-      <Card style={{ borderRadius: 10, overflow: 'hidden' }}>
-        <CardItem
-          button
-          onPress={ () => this.goToDetails(data) }
-        >
-          <Image
-            key="avatar"
-            source={{uri: 'https://via.placeholder.com/80?text=group'}}
-            style={{
-              height: 50,
-              width: 50,
-              borderRadius: 50/2,
+      <SwipeRow
+        ref={c => { this.groupRows[data.key] = c }}
+        disableRightSwipe
+        rightOpenValue={-75}
+        onRowOpen={() => {
+          if (this.selectedRow && (this.selectedRow !== this.groupRows[data.key])) {
+            this.selectedRow._root.closeRow();
+          }
+          this.selectedRow = this.groupRows[data.key];
+        }}
+        body={
+              <Grid>
+                <Row onPress={ () => this.goToDetails(data) }>
+                  <Col size={15} style={{ marginLeft: 5 }}>
+                    <Image
+                      key="avatar"
+                      source={{uri: data.avatar}}
+                      style={{
+                        height: 50,
+                        width: 50,
+                        borderRadius: 50/2,
+                      }}
+                    />
+                  </Col>
+                  <Col size={60} style={{ marginLeft: 10 }}>
+                    <Row><Text style={{ fontSize: 15, fontWeight: 'bold' }}>{data.name}</Text></Row>
+                    <Row><Text style={{ marginTop: 12, color: '#959595' }}>{preview}</Text></Row>
+                  </Col>
+                  <Col size={25}>
+                    <Text style={{ textAlign: 'right', color: '#959595' }}>{timeInfo}</Text>                    
+                  </Col>
+                </Row>
+              </Grid>
+        }
+        right={
+          <Button
+            info
+            onPress={() => {
+              this.props.navigation.navigate( 'GroupDetailsScreen', { group: data } );
+              this.selectedRow._root.closeRow();
             }}
-          />
-          <Grid style={{ marginLeft: 15 }}>
-            <Row>
-              <Col><Text style={{ fontSize: 15, fontWeight: 'bold' }}>{data.name}</Text></Col>
-              <Col><Text style={{ textAlign: 'right', color: '#959595' }}>{timeInfo}</Text></Col>
-            </Row>
-            <Row>
-              <Text style={{ marginTop: 12, color: '#959595' }}>{lastMessageText}</Text>
-            </Row>
-          </Grid>
-          {info}
-        </CardItem>
-      </Card>
+          >
+            <Icon active type="Ionicons" name="ios-more" />
+          </Button>
+        }
+      />
+
     );
   }
 
@@ -155,7 +180,7 @@ class GroupsScreen extends Component {
     const content = (
       <Content>
         <FlatList
-          style={{ padding: 15, paddingBottom: 75 }}
+          style={{ padding: 0, paddingBottom: 75 }}
           enableEmptySections
           data={this.props.groups.sort(this.sortGroups)}
           renderItem={({ item: data }) => this.renderMessage(data)}

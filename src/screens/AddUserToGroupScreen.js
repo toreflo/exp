@@ -28,7 +28,7 @@ class AddUserToGroupScreen extends Component {
   }
 
   componentDidMount() {
-    this.props.navigation.setParams({title: 'Aggiunta utente'});
+    this.props.navigation.setParams({title: 'Aggiungi partecipante'});
   }
 
   addUser(user, secId, rowId, rowMap) {

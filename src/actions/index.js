@@ -87,6 +87,12 @@ export const updateAvatar = (uid, uri) => ({
   uri,
 });
 
+export const updateGroupAvatar = (groupKey, uri) => ({
+  type: types.UPDATE_GROUP_AVATAR,
+  groupKey,
+  uri,
+});
+
 export const updateUnreadMessages = (groupKey, count) => ({
   type: types.UPDATE_UNREAD_MESSAGES,
   groupKey,
