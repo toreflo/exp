@@ -2,48 +2,75 @@ import React, { Component } from 'react';
 import { 
   View,
   ListView,
-  StyleSheet
+  TouchableOpacity,
 } from 'react-native';
 import {
   Container,
   Button,
   Icon,
   List,
-  Spinner,
+  CheckBox,
   ListItem,
   Text,
+  Left,
+  Right,
 } from 'native-base';
 import { connect } from 'react-redux';
 import firebase from 'firebase';
 
+import nativeBaseTheme from '../../native-base-theme/variables/commonColor';
 
 class AddUserToGroupScreen extends Component {
   constructor(props) {
     super(props);
     this.ds = new ListView.DataSource({ rowHasChanged: (r1, r2) => r1 !== r2 });
     this.state = {
-      newUser: '',
+      newUsers: [],
     };
+    this.selectUser = this.selectUser.bind(this);
+    this.toggleSelectAll = this.toggleSelectAll.bind(this);
     this.addUser = this.addUser.bind(this);
   }
 
   componentDidMount() {
-    this.props.navigation.setParams({title: 'Aggiungi partecipante'});
+    this.props.navigation.setParams({title: 'Aggiungi partecipanti'});
   }
 
-  addUser(user, secId, rowId, rowMap) {
-    const { key: groupKey } = this.props.navigation.getParam('group');
-    rowMap[`${secId}${rowId}`].props.closeRow();
+  selectUser(userKey) {
+    this.setState(({ newUsers: selected }) => {
+      const idx = selected.findIndex(key => key === userKey);
+      if (idx === -1) return({ newUsers: [...selected, userKey]});
+      return ({ newUsers: [...selected.slice(0, idx), ...selected.slice(idx + 1)]})
+    });
+  }
 
+  toggleSelectAll(users, allSelected) {
+    if (allSelected) this.setState({ newUsers: [] });
+    else this.setState({ newUsers: users.map(user => user.key) });
+  }
+
+  addUser() {
+    const userKeys = this.state.newUsers;
+
+    if (userKeys.length === 0) {
+      alert('Nessun utente selezionato');
+      return;
+    }
+
+    const { key: groupKey } = this.props.navigation.getParam('group');
     const updates = {};
-    updates[`/users/${user.key}/groups/${groupKey}`] = {
-      lastMessageRead: 0,
-      unread: 0,
-    };
-    updates[`/groups/${groupKey}/users/${user.key}`] = true;
-  
+    userKeys.forEach(userKey => {
+      updates[`/users/${userKey}/groups/${groupKey}`] = {
+        lastMessageRead: 0,
+        unread: 0,
+      };
+      updates[`/groups/${groupKey}/users/${userKey}`] = true;  
+    })
+
     firebase.database().ref().update(updates)
       .catch((error) => alert(`${error.name}: ${error.message}`));
+
+    this.setState({ newUsers: [] });
   }
 
   render() {
@@ -53,43 +80,51 @@ class AddUserToGroupScreen extends Component {
     });
     let content;
     const noUser = (<Text>Tutti gli utenti appartengono già al gruppo!</Text>);
+    const allSelected = users.length === this.state.newUsers.length;
     const list = (
       <List
+        disableRightSwipe
+        disableLeftSwipe
+        renderRightHiddenRow={() => {}}
         removeClippedSubviews={false}
-        style={{ paddingTop: 24 }}
-        leftOpenValue={75}
-        rightOpenValue={-75}
         dataSource={this.ds.cloneWithRows(users)}
         renderRow={(data) => (
-          <ListItem>
-            <Text> {`${data.name} ${data.surname}`} </Text>
+          <ListItem onPress={() => this.selectUser(data.key)}>
+            <Left><Text> {`${data.name} ${data.surname}`} </Text></Left>
+            <Right>
+              <CheckBox
+                onPress={() => this.selectUser(data.key)}
+                checked={this.state.newUsers.findIndex(key => key === data.key) !== -1} />
+            </Right>
           </ListItem>
         )}
-        renderLeftHiddenRow={(data, secId, rowId, rowMap) => (
-          <Button full onPress={() => {
-            alert(data);
-            rowMap[`${secId}${rowId}`].props.closeRow();
-          }}>
-            <Icon active name="information-circle" />
-          </Button>
-        )}
-        renderRightHiddenRow={(data, secId, rowId, rowMap) => {
-          return (
-            <Button full onPress={() => this.addUser(data, secId, rowId, rowMap)}>
-              <Icon active name="add" />
-            </Button>
-          );
-        }}
       />);
     if (users.length === 0) content = noUser;
     else content = list;
+    
+    const addButton = this.state.newUsers.length === 0 ? null : (
+      <View style={{ padding: 10, flex: 1, alignItems: 'flex-start' }}>
+        <TouchableOpacity onPress={this.addUser}>
+          <Text style={{ color: nativeBaseTheme.brandPrimary }}>Aggiungi</Text>
+        </TouchableOpacity>
+      </View>);
+    const selectText = allSelected ? 'Deseleziona tutti' : 'Seleziona tutti';
+    const selectAllButton = (
+      <View style={{ padding: 10, flex: 1, alignItems: 'flex-end' }}>
+        <TouchableOpacity onPress={() => this.toggleSelectAll(users, allSelected)}>
+          <Text style={{ color: nativeBaseTheme.brandPrimary }}>{selectText}</Text>
+        </TouchableOpacity>
+      </View>
+    );
 
     return (
-      <Container>
-        <View style={{ flex: 1 }}>
-          {content}
+      <View>
+        <View style={{ flexDirection: 'row' }}>
+          {addButton}
+          {selectAllButton}
         </View>
-      </Container>
+        {content}
+      </View>
     );
   }
 }

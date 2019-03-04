@@ -7,13 +7,13 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import {
+  Body,
   Container,
   Button,
   Icon,
   List,
   ListItem,
   Text,
-  Fab,
   ActionSheet,
   Root,
 } from 'native-base';
@@ -23,6 +23,7 @@ import { connect } from 'react-redux';
 
 import * as fileStorage from '../lib/fileStorage';
 import * as actions from '../actions';
+import nativeBaseTheme from '../../native-base-theme/variables/commonColor';
 
 class GroupDetailsScreen extends Component {
   constructor(props) {
@@ -30,12 +31,12 @@ class GroupDetailsScreen extends Component {
     this.ds = new ListView.DataSource({ rowHasChanged: (r1, r2) => r1 !== r2 });
     this.state = {};
     this.db = firebase.database();
-    this.deleteUser = this.deleteUser.bind(this);
+    this.removeUser = this.removeUser.bind(this);
+    this.removeAllUsers = this.removeAllUsers.bind(this);
     this.removeGroup = this.removeGroup.bind(this);
-    this.showConfirmDialog = this.showConfirmDialog.bind(this);
-    this.hideConfirmDialog = this.hideConfirmDialog.bind(this);
     this.upload = this.upload.bind(this);
     this.pickFromGallery = this.pickFromGallery.bind(this);
+    this.showActionSheet = this.showActionSheet.bind(this);
   }
 
   componentDidMount() {
@@ -47,15 +48,7 @@ class GroupDetailsScreen extends Component {
     this.props.navigation.setParams({ title: name });
   }
 
-  showConfirmDialog() {
-    this.setState({showConfirm: true});
-  }
-
-  hideConfirmDialog() {
-    this.setState({showConfirm: false}) 
-  }
-  
-  deleteUser(user, secId, rowId, rowMap) {
+  removeUser(user, secId, rowId, rowMap) {
     rowMap[`${secId}${rowId}`].props.closeRow();
     const { key: groupKey } = this.props.navigation.getParam('group');
 
@@ -67,8 +60,21 @@ class GroupDetailsScreen extends Component {
       .catch((error) => alert(`${error.name}: ${error.message}`));
   }
 
+  removeAllUsers() {
+    const { key: groupKey } = this.props.navigation.getParam('group');
+    const users = this.getGroupUsers();
+
+    const updates = {};
+    users.forEach(user => {
+      updates[`/users/${user.key}/groups/${groupKey}`] = null;
+    });
+    updates[`/groups/${groupKey}/users`] = null;
+  
+    this.db.ref().update(updates)
+      .catch((error) => alert(`${error.name}: ${error.message}`));
+  }
+
   removeGroup() {
-    this.setState({showConfirm: false}) 
     const { key: groupKey } = this.props.navigation.getParam('group');
 
     const updates = this.getGroupUsers().reduce((userUpdates, user) => ({
@@ -118,16 +124,64 @@ class GroupDetailsScreen extends Component {
     )
   }
 
+  showActionSheet(mode) {
+    const config = {
+      'avatar': {
+        options: ['Modifica immagine', 'Annulla'],
+        action: this.pickFromGallery,
+      },
+      'removeGroup': {
+        options: ['Cancella il gruppo', 'Annulla'],
+        action: this.removeGroup,
+        destructiveButtonIndex: 0,
+      },
+      'removeUser': {
+        options: ['Rimuovi l\'utente', 'Annulla'],
+        action: () => {},
+        destructiveButtonIndex: 0,
+      },
+      'removeAllUsers': {
+        options: ['Svuota il gruppo', 'Annulla'],
+        action: this.removeAllUsers,
+        destructiveButtonIndex: 0,
+      },
+    };
+    ActionSheet.show(
+      {
+        options: config[mode].options,
+        destructiveButtonIndex: config[mode].destructiveButtonIndex,
+        cancelButtonIndex: 1,
+      },
+      (buttonIndex) => {
+        if (buttonIndex === 0) {
+          config[mode].action();
+        }
+      },
+    );
+  }
+
   render() {
-    const options = ['Modifica immagine', 'Annulla'];
-    const CHANGE_IMAGE_IDX = 0;
-    const CANCEL_IDX = 1;
     const { key: groupKey } = this.props.navigation.getParam('group');
     const group = this.props.groups.find(item => item.key === groupKey);
     const users = this.getGroupUsers();
+
     const content = (
       <View style={{ paddingTop: 24 }}>
         <Text style={{ padding: 5, color: '#9e9e9e', fontSize: 12 }}>{`${users.length} PARTECIPANTI`}</Text>
+
+        <List style={{ paddingLeft: 0, marginLeft: 0 }}>
+          <ListItem style={{ paddingLeft: 5, marginLeft: 0, backgroundColor: 'white' }}>
+            <View style={{ flex: 1 }}>
+              <TouchableOpacity onPress={() => { this.props.navigation.navigate('AddUserToGroupScreen', { group }); }}>
+                <View style={{ flexDirection: 'row' }}>
+                  <Icon type="Ionicons" name="ios-add-circle-outline" style={{ color: nativeBaseTheme.brandPrimary }} />
+                  <Text style={{ color: nativeBaseTheme.brandPrimary, paddingLeft: 10 }}>Aggiungi partecipanti</Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+          </ListItem>
+        </List>
+
         <List
           removeClippedSubviews={false}
           enableEmptySections
@@ -139,16 +193,27 @@ class GroupDetailsScreen extends Component {
             </ListItem>
           )}
           renderRightHiddenRow={(data, secId, rowId, rowMap) => (
-            <Button full danger onPress={() => this.deleteUser(data, secId, rowId, rowMap)}>
+            <Button full danger onPress={() => this.removeUser(data, secId, rowId, rowMap)}>
               <Icon active name="trash" />
             </Button>
           )}
         />
-        
+
+        <List style={{ paddingLeft: 0, marginLeft: 0 }}>
+          <ListItem style={{ paddingLeft: 5, marginLeft: 0, backgroundColor: 'white' }}>
+            <View style={{ flex: 1 }}>
+              <TouchableOpacity onPress={() => this.showActionSheet('removeAllUsers')}>
+                {/* <Icon type="Ionicons" name="ios-trash" style={{ color: nativeBaseTheme.brandDanger }} /> */}
+                <Text style={{ color: nativeBaseTheme.brandDanger, paddingLeft: 10 }}>Svuota gruppo</Text>
+              </TouchableOpacity>
+            </View>
+          </ListItem>
+        </List>
+
         <List style={{ paddingTop: 24, paddingLeft: 0, marginLeft: 0 }}>
           <ListItem
-            style={{ paddingLeft: 0, marginLeft: 0, backgroundColor: 'white' }}
-            onPress={this.showConfirmDialog}
+            style={{ paddingLeft: 5, marginLeft: 0, backgroundColor: 'white' }}
+            onPress={() => this.showActionSheet('removeGroup')}
           >
             <Text style={{ color: 'red' }}>Elimina gruppo</Text>
           </ListItem>
@@ -160,20 +225,9 @@ class GroupDetailsScreen extends Component {
         <Container style={{ backgroundColor: '#dddddd' }}>
           <View style={{ flex: 1 }}>
             <TouchableOpacity
-              onPress={() => ActionSheet.show({
-                options,
-                cancelButtonIndex: CANCEL_IDX,
-                // title: "Testing ActionSheet"
-              },
-              (buttonIndex) => {
-                if (buttonIndex === CHANGE_IMAGE_IDX) {
-                  this.pickFromGallery();
-                }
-              },
-            )}>
+              onPress={() => this.showActionSheet('avatar')}>
               <Image
                 key="avatar"
-                // source={{uri: `https://via.placeholder.com/${Dimensions.get('window').width}?text=group`}}
                 source={{uri: group.avatar}}
                 style={{
                   height: 100,
@@ -183,25 +237,6 @@ class GroupDetailsScreen extends Component {
               />
             </TouchableOpacity>
             {content}
-            <Fab
-              active={true}
-              direction="up"
-              containerStyle={{ }}
-              style={{ backgroundColor: '#5067FF' }}
-              position="bottomRight"
-              onPress={() => this.props.navigation.navigate('AddUserToGroupScreen', { group })}>
-              <Icon type="FontAwesome" name="user-plus" />
-            </Fab>
-          </View>
-          <View>
-            <Dialog.Container visible={this.state.showConfirm}>
-              <Dialog.Title>Conferma cancellazione</Dialog.Title>
-              <Dialog.Description>
-                Sei sicuro di voler cancellare il gruppo?
-              </Dialog.Description>
-              <Dialog.Button label="Annulla" onPress={this.hideConfirmDialog}/>
-              <Dialog.Button label="Conferma" onPress={this.removeGroup}/>
-            </Dialog.Container>
           </View>
         </Container>
       </Root>

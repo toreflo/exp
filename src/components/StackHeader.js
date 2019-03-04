@@ -3,43 +3,6 @@ import { Header, Left, Right, Body, Title, Text, Icon, Button } from 'native-bas
 import { initialRouteKey } from '../gbl';
 
 class StackHeader extends Component {
-  constructor(props) {
-    super(props);
-
-    this.state = {};
-    this.toggleButton = this.toggleButton.bind(this);
-  }
-
-  /* componentDidMount() {
-    const rightButtons = this.props.navigation.getParam('rightButtons');
-    const toggleButtons = {};
-    if (rightButtons) {
-      right = rightButtons.map((button) => {
-        if (button.toggle) {
-          toggleButtons[button.key] = { active: false };
-        }
-      });
-      this.setState({ toggleButtons, })
-    }
-    console.log('componentDidMount completed', rightButtons, toggleButtons)
-  } */
-
-  toggleButton(key) {
-    this.setState((prevState) => {
-      const newState = { ...prevState };
-      let active;
-      if (!newState.toggleButtons) {
-        newState.toggleButtons = {};
-      }
-      if (newState.toggleButtons[key]) {
-        active = !newState.toggleButtons[key].active;
-      } else {
-        active = true;
-      }
-      newState.toggleButtons[key] = { active };
-      return (newState);
-    });
-  }
 
   render() {
     const { navigation } = this.props;
@@ -63,22 +26,14 @@ class StackHeader extends Component {
     const rightButtons = navigation.getParam('rightButtons');
     if (rightButtons) {
       right = rightButtons.map((button) => {
-        const active = (this.state.toggleButtons &&
-                        this.state.toggleButtons[button.key] &&
-                        this.state.toggleButtons[button.key].active);
+        const content = button.icon ? button.icon : <Text>{button.text}</Text>;
         return (
           <Button
             key={button.key}
-            danger={active}
             transparent
-            onPress={() => {
-              if (button.toggle) {
-                this.toggleButton(button.key);
-              }
-              button.callback();
-            }}
+            onPress={button.callback}
           >
-            {button.icon}
+            {content}
           </Button>
         );
       });
