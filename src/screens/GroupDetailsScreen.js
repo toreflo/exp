@@ -32,7 +32,6 @@ class GroupDetailsScreen extends Component {
     this.state = {};
     this.db = firebase.database();
     this.removeUser = this.removeUser.bind(this);
-    this.removeAllUsers = this.removeAllUsers.bind(this);
     this.removeGroup = this.removeGroup.bind(this);
     this.upload = this.upload.bind(this);
     this.pickFromGallery = this.pickFromGallery.bind(this);
@@ -54,20 +53,6 @@ class GroupDetailsScreen extends Component {
     const updates = {};
     updates[`/users/${user.key}/groups/${groupKey}`] = null;
     updates[`/groups/${groupKey}/users/${user.key}`] = null;
-  
-    this.db.ref().update(updates)
-      .catch((error) => alert(`${error.name}: ${error.message}`));
-  }
-
-  removeAllUsers() {
-    const { key: groupKey } = this.props.navigation.getParam('group');
-    const users = this.getGroupUsers();
-
-    const updates = {};
-    users.forEach(user => {
-      updates[`/users/${user.key}/groups/${groupKey}`] = null;
-    });
-    updates[`/groups/${groupKey}/users`] = null;
   
     this.db.ref().update(updates)
       .catch((error) => alert(`${error.name}: ${error.message}`));
@@ -183,7 +168,12 @@ class GroupDetailsScreen extends Component {
               return (
                 <ListItem style={{ paddingLeft: 5 }}>
                   <View style={{ flex: 1 }}>
-                    <TouchableOpacity onPress={() => { this.props.navigation.navigate('AddUserToGroupScreen', { group }); }}>
+                    <TouchableOpacity onPress={() => {
+                      this.props.navigation.navigate(
+                        'UserToGroupScreen',
+                        { group, mode: 'ADD' },
+                      ); 
+                    }}>
                       <View style={{ flexDirection: 'row' }}>
                         <Icon type="Ionicons" name="ios-add-circle-outline" style={{ color: nativeBaseTheme.brandPrimary }} />
                         <Text style={{ color: nativeBaseTheme.brandPrimary, paddingLeft: 10 }}>Aggiungi partecipanti</Text>
@@ -196,7 +186,10 @@ class GroupDetailsScreen extends Component {
               return (
                 <ListItem style={{ paddingLeft: 5 }}>
                   <View style={{ flex: 1 }}>
-                    <TouchableOpacity onPress={() => console.log('>>>>> TODO: navigate to remove screen')}>
+                    <TouchableOpacity onPress={() => this.props.navigation.navigate(
+                      'UserToGroupScreen',
+                      { group, mode: 'REMOVE' },
+                    )}>
                       <View style={{ flexDirection: 'row' }}>
                         <Icon type="Ionicons" name="ios-remove-circle-outline" style={{ color: nativeBaseTheme.brandDanger }} />
                         <Text style={{ color: nativeBaseTheme.brandDanger, paddingLeft: 10 }}>Rimuovi partecipanti</Text>

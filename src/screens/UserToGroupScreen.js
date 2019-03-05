@@ -20,37 +20,42 @@ import firebase from 'firebase';
 
 import nativeBaseTheme from '../../native-base-theme/variables/commonColor';
 
-class AddUserToGroupScreen extends Component {
+class UserToGroupScreen extends Component {
   constructor(props) {
     super(props);
     this.ds = new ListView.DataSource({ rowHasChanged: (r1, r2) => r1 !== r2 });
     this.state = {
-      newUsers: [],
+      selectedUsers: [],
     };
     this.selectUser = this.selectUser.bind(this);
     this.toggleSelectAll = this.toggleSelectAll.bind(this);
     this.addUser = this.addUser.bind(this);
+    this.removeUser = this.removeUser.bind(this);
+    this.addMode = true;
   }
 
   componentDidMount() {
-    this.props.navigation.setParams({title: 'Aggiungi partecipanti'});
+    this.addMode = this.props.navigation.getParam('mode') === 'ADD';
+    
+    if (this.addMode) this.props.navigation.setParams({title: 'Aggiungi partecipanti'});
+    else this.props.navigation.setParams({title: 'Rimuovi partecipanti'});
   }
 
   selectUser(userKey) {
-    this.setState(({ newUsers: selected }) => {
+    this.setState(({ selectedUsers: selected }) => {
       const idx = selected.findIndex(key => key === userKey);
-      if (idx === -1) return({ newUsers: [...selected, userKey]});
-      return ({ newUsers: [...selected.slice(0, idx), ...selected.slice(idx + 1)]})
+      if (idx === -1) return({ selectedUsers: [...selected, userKey]});
+      return ({ selectedUsers: [...selected.slice(0, idx), ...selected.slice(idx + 1)]})
     });
   }
 
   toggleSelectAll(users, allSelected) {
-    if (allSelected) this.setState({ newUsers: [] });
-    else this.setState({ newUsers: users.map(user => user.key) });
+    if (allSelected) this.setState({ selectedUsers: [] });
+    else this.setState({ selectedUsers: users.map(user => user.key) });
   }
 
   addUser() {
-    const userKeys = this.state.newUsers;
+    const userKeys = this.state.selectedUsers;
 
     if (userKeys.length === 0) {
       alert('Nessun utente selezionato');
@@ -70,17 +75,39 @@ class AddUserToGroupScreen extends Component {
     firebase.database().ref().update(updates)
       .catch((error) => alert(`${error.name}: ${error.message}`));
 
-    this.setState({ newUsers: [] });
+    this.setState({ selectedUsers: [] });
+  }
+
+  removeUser() {
+    const userKeys = this.state.selectedUsers;
+
+    if (userKeys.length === 0) {
+      alert('Nessun utente selezionato');
+      return;
+    }
+
+    const { key: groupKey } = this.props.navigation.getParam('group');
+    const updates = {};
+    userKeys.forEach(userKey => {
+      updates[`/users/${userKey}/groups/${groupKey}`] = null;
+      updates[`/groups/${groupKey}/users/${userKey}`] = null;
+    })
+
+    firebase.database().ref().update(updates)
+      .catch((error) => alert(`${error.name}: ${error.message}`));
+
+    this.setState({ selectedUsers: [] });
   }
 
   render() {
     const { key: groupKey } = this.props.navigation.getParam('group');
     const users = this.props.users.filter((user) => {
-      return (!user.groups || !Object.keys(user.groups).find(key => key === groupKey));
+      if (this.addMode) return (!user.groups || !Object.keys(user.groups).find(key => key === groupKey));
+      return (user.groups && Object.keys(user.groups).find(key => key === groupKey));
     });
     let content;
-    const noUser = (<Text>Tutti gli utenti appartengono già al gruppo!</Text>);
-    const allSelected = users.length === this.state.newUsers.length;
+    const noUser = null;
+    const allSelected = users.length === this.state.selectedUsers.length;
     const list = (
       <List
         disableRightSwipe
@@ -94,7 +121,7 @@ class AddUserToGroupScreen extends Component {
             <Right>
               <CheckBox
                 onPress={() => this.selectUser(data.key)}
-                checked={this.state.newUsers.findIndex(key => key === data.key) !== -1} />
+                checked={this.state.selectedUsers.findIndex(key => key === data.key) !== -1} />
             </Right>
           </ListItem>
         )}
@@ -102,13 +129,13 @@ class AddUserToGroupScreen extends Component {
     if (users.length === 0) content = noUser;
     else content = list;
     
-    const addButton = this.state.newUsers.length === 0 ? null : (
+    const addButton = this.state.selectedUsers.length === 0 ? null : (
       <View style={{ padding: 10, flex: 1, alignItems: 'flex-start' }}>
-        <TouchableOpacity onPress={this.addUser}>
-          <Text style={{ color: nativeBaseTheme.brandPrimary }}>Aggiungi</Text>
+        <TouchableOpacity onPress={this.addMode ? this.addUser : this.removeUser}>
+          <Text style={{ color: nativeBaseTheme.brandPrimary }}>{this.addMode ? 'Aggiungi' : 'Rimuovi'}</Text>
         </TouchableOpacity>
       </View>);
-    const selectText = allSelected ? 'Deseleziona tutti' : 'Seleziona tutti';
+    const selectText = users.length === 0 ? null : (allSelected ? 'Deseleziona tutti' : 'Seleziona tutti');
     const selectAllButton = (
       <View style={{ padding: 10, flex: 1, alignItems: 'flex-end' }}>
         <TouchableOpacity onPress={() => this.toggleSelectAll(users, allSelected)}>
@@ -134,4 +161,4 @@ const mapStateToProps = (state) => ({
   users: state.users,
 });
 
-export default connect(mapStateToProps)(AddUserToGroupScreen);
+export default connect(mapStateToProps)(UserToGroupScreen);
