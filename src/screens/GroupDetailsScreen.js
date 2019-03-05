@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import {
-  Body,
+  Content,
   Container,
   Button,
   Icon,
@@ -48,8 +48,7 @@ class GroupDetailsScreen extends Component {
     this.props.navigation.setParams({ title: name });
   }
 
-  removeUser(user, secId, rowId, rowMap) {
-    rowMap[`${secId}${rowId}`].props.closeRow();
+  removeUser(user) {
     const { key: groupKey } = this.props.navigation.getParam('group');
 
     const updates = {};
@@ -124,7 +123,7 @@ class GroupDetailsScreen extends Component {
     )
   }
 
-  showActionSheet(mode) {
+  showActionSheet(mode, data) {
     const config = {
       'avatar': {
         options: ['Modifica immagine', 'Annulla'],
@@ -136,13 +135,8 @@ class GroupDetailsScreen extends Component {
         destructiveButtonIndex: 0,
       },
       'removeUser': {
-        options: ['Rimuovi l\'utente', 'Annulla'],
-        action: () => {},
-        destructiveButtonIndex: 0,
-      },
-      'removeAllUsers': {
-        options: ['Svuota il gruppo', 'Annulla'],
-        action: this.removeAllUsers,
+        options: [`Rimuovi l\'utente ${data.name} ${data.surname}`, 'Annulla'],
+        action: () => this.removeUser(data),
         destructiveButtonIndex: 0,
       },
     };
@@ -164,80 +158,103 @@ class GroupDetailsScreen extends Component {
     const { key: groupKey } = this.props.navigation.getParam('group');
     const group = this.props.groups.find(item => item.key === groupKey);
     const users = this.getGroupUsers();
-
+    const listItems = [].concat(
+      { itemType: 'addUser' },
+      { itemType: 'truncate' },
+      users,
+      { itemType: 'delete' },
+    );
     const content = (
-      <View style={{ paddingTop: 24 }}>
+      <View style={{ paddingTop: 24, paddingBottom: 24 }}>
         <Text style={{ padding: 5, color: '#9e9e9e', fontSize: 12 }}>{`${users.length} PARTECIPANTI`}</Text>
-
-        <List style={{ paddingLeft: 0, marginLeft: 0 }}>
-          <ListItem style={{ paddingLeft: 5, marginLeft: 0, backgroundColor: 'white' }}>
-            <View style={{ flex: 1 }}>
-              <TouchableOpacity onPress={() => { this.props.navigation.navigate('AddUserToGroupScreen', { group }); }}>
-                <View style={{ flexDirection: 'row' }}>
-                  <Icon type="Ionicons" name="ios-add-circle-outline" style={{ color: nativeBaseTheme.brandPrimary }} />
-                  <Text style={{ color: nativeBaseTheme.brandPrimary, paddingLeft: 10 }}>Aggiungi partecipanti</Text>
-                </View>
-              </TouchableOpacity>
-            </View>
-          </ListItem>
-        </List>
-
         <List
           removeClippedSubviews={false}
           enableEmptySections
-          rightOpenValue={-75}
-          dataSource={this.ds.cloneWithRows(users)}
-          renderRow={(data) => (
-            <ListItem>
-              <Text> {`${data.name} ${data.surname}`} </Text>
-            </ListItem>
-          )}
+          // disableRightSwipe
+          // disableLeftSwipe
+          dataSource={this.ds.cloneWithRows(listItems)}
           renderRightHiddenRow={(data, secId, rowId, rowMap) => (
             <Button full danger onPress={() => this.removeUser(data, secId, rowId, rowMap)}>
               <Icon active name="trash" />
             </Button>
           )}
+          renderRow={(data) => {
+            if (data.itemType === 'addUser') {
+              return (
+                <ListItem style={{ paddingLeft: 5 }}>
+                  <View style={{ flex: 1 }}>
+                    <TouchableOpacity onPress={() => { this.props.navigation.navigate('AddUserToGroupScreen', { group }); }}>
+                      <View style={{ flexDirection: 'row' }}>
+                        <Icon type="Ionicons" name="ios-add-circle-outline" style={{ color: nativeBaseTheme.brandPrimary }} />
+                        <Text style={{ color: nativeBaseTheme.brandPrimary, paddingLeft: 10 }}>Aggiungi partecipanti</Text>
+                      </View>
+                    </TouchableOpacity>
+                  </View>
+                </ListItem>
+              );
+            } else if (data.itemType === 'truncate') {
+              return (
+                <ListItem style={{ paddingLeft: 5 }}>
+                  <View style={{ flex: 1 }}>
+                    <TouchableOpacity onPress={() => console.log('>>>>> TODO: navigate to remove screen')}>
+                      <View style={{ flexDirection: 'row' }}>
+                        <Icon type="Ionicons" name="ios-remove-circle-outline" style={{ color: nativeBaseTheme.brandDanger }} />
+                        <Text style={{ color: nativeBaseTheme.brandDanger, paddingLeft: 10 }}>Rimuovi partecipanti</Text>
+                      </View>
+                    </TouchableOpacity>
+                  </View>
+                </ListItem>
+              );
+            } else if (data.itemType === 'delete') {
+              return ([
+                <ListItem key={0} itemDivider />,
+                <ListItem
+                  key={1}
+                  style={{ paddingLeft: 5 }}
+                >
+                  <View style={{ flex: 1 }}>
+                    <TouchableOpacity onPress={() => this.showActionSheet('removeGroup')}>
+                      <View style={{ flexDirection: 'row' }}>
+                        <Icon type="Ionicons" name="ios-trash" style={{ color: nativeBaseTheme.brandDanger }} />
+                        <Text style={{ color: nativeBaseTheme.brandDanger, paddingLeft: 10 }}>Elimina gruppo</Text>
+                      </View>
+                    </TouchableOpacity>
+                  </View>
+                  {/* <Text style={{ color: nativeBaseTheme.brandDanger }}>Elimina gruppo</Text> */}
+                </ListItem>
+              ]);
+            } else {
+              return (
+                <ListItem onPress={() => this.showActionSheet('removeUser', data)}>
+                  <Text> {`${data.name} ${data.surname}`} </Text>
+                </ListItem>
+              );
+            }
+          }}
         />
-
-        <List style={{ paddingLeft: 0, marginLeft: 0 }}>
-          <ListItem style={{ paddingLeft: 5, marginLeft: 0, backgroundColor: 'white' }}>
-            <View style={{ flex: 1 }}>
-              <TouchableOpacity onPress={() => this.showActionSheet('removeAllUsers')}>
-                {/* <Icon type="Ionicons" name="ios-trash" style={{ color: nativeBaseTheme.brandDanger }} /> */}
-                <Text style={{ color: nativeBaseTheme.brandDanger, paddingLeft: 10 }}>Svuota gruppo</Text>
-              </TouchableOpacity>
-            </View>
-          </ListItem>
-        </List>
-
-        <List style={{ paddingTop: 24, paddingLeft: 0, marginLeft: 0 }}>
-          <ListItem
-            style={{ paddingLeft: 5, marginLeft: 0, backgroundColor: 'white' }}
-            onPress={() => this.showActionSheet('removeGroup')}
-          >
-            <Text style={{ color: 'red' }}>Elimina gruppo</Text>
-          </ListItem>
-        </List>
-      </View>);
+      </View>
+    );
 
     return (
       <Root>
         <Container style={{ backgroundColor: '#dddddd' }}>
-          <View style={{ flex: 1 }}>
-            <TouchableOpacity
-              onPress={() => this.showActionSheet('avatar')}>
-              <Image
-                key="avatar"
-                source={{uri: group.avatar}}
-                style={{
-                  height: 100,
-                  width: Dimensions.get('window').width,
-                  resizeMode: 'cover',
-                }}
-              />
-            </TouchableOpacity>
+          <Content>
+            <View style={{ flex: 1 }}>
+              <TouchableOpacity
+                onPress={() => this.showActionSheet('avatar')}>
+                <Image
+                  key="avatar"
+                  source={{uri: group.avatar}}
+                  style={{
+                    height: 100,
+                    width: Dimensions.get('window').width,
+                    resizeMode: 'cover',
+                  }}
+                />
+              </TouchableOpacity>
+            </View>
             {content}
-          </View>
+          </Content>
         </Container>
       </Root>
     );
