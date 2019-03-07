@@ -109,31 +109,34 @@ class GroupDetailsScreen extends Component {
   }
 
   showActionSheet(mode, data) {
-    const config = {
-      'avatar': {
+    let config;
+    if (mode === 'avatar') {
+      config = {
         options: ['Modifica immagine', 'Annulla'],
         action: this.pickFromGallery,
-      },
-      'removeGroup': {
+      };
+    } else if (mode === 'removeGroup') {
+      config = {
         options: ['Cancella il gruppo', 'Annulla'],
         action: this.removeGroup,
         destructiveButtonIndex: 0,
-      },
-      'removeUser': {
+      };
+    } else if (mode === 'removeUser') {
+      config = {
         options: [`Rimuovi l\'utente ${data.name} ${data.surname}`, 'Annulla'],
         action: () => this.removeUser(data),
         destructiveButtonIndex: 0,
-      },
-    };
+      };
+    }
     ActionSheet.show(
       {
-        options: config[mode].options,
-        destructiveButtonIndex: config[mode].destructiveButtonIndex,
+        options: config.options,
+        destructiveButtonIndex: config.destructiveButtonIndex,
         cancelButtonIndex: 1,
       },
       (buttonIndex) => {
         if (buttonIndex === 0) {
-          config[mode].action();
+          config.action();
         }
       },
     );
